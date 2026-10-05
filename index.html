@@ -494,10 +494,28 @@ function showVideo(url) {
   const v = $('#stage video');
   $('#playbtn').addEventListener('click', () => { v.play().catch(() => {}); });
   v.addEventListener('play', () => { const b = $('#playbtn'); if (b) b.remove(); });
-  v.addEventListener('error', () => { $('#err').textContent = 'Video bu tarayıcıda oynamadı. Aşağıdaki "Videoyu aç / indir" bağlantısını kullan.'; });
-  setActions(`<a href="${url}" target="_blank" rel="noopener">Videoyu aç / indir</a><button id="again2">Yeniden dene</button>`);
+  v.addEventListener('error', () => { $('#err').textContent = 'Video bu tarayıcıda oynamadı. "Videoyu aç" bağlantısını dene.'; });
+  setActions(`<button class="main" id="saveBtn" disabled>Kaydetmeye hazırlanıyor...</button><a href="${url}" target="_blank" rel="noopener">Videoyu aç</a><button id="again2">Yeniden dene</button>`);
   $('#again2').addEventListener('click', () => (VIDEO[document.querySelector('input[name=m]:checked').value].noFrame ? runSwap() : runFrame()));
+  prepareSave(url);
   focusStage();
+}
+
+// Videoyu önceden indirip hazır tutar: iPhone'da paylaşma menüsü ancak dokunma anında açılabilir.
+function prepareSave(url) {
+  const btn = $('#saveBtn');
+  fetch(url).then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); }).then((blob) => {
+    const file = new File([blob], 'halay-video.mp4', { type: 'video/mp4' });
+    btn.disabled = false; btn.textContent = 'Videoyu kaydet';
+    btn.addEventListener('click', async () => {
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Halay videosu' }); return; }
+      } catch (e) { if (e && e.name === 'AbortError') return; }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'halay-video.mp4';
+      document.body.appendChild(a); a.click(); a.remove();
+      $('#err').textContent = 'İndirme başladıysa Dosyalar uygulamasındaki İndirilenler klasörüne bak. Olmadıysa "Videoyu aç" bağlantısına basıp videoya uzun basarak kaydet.';
+    });
+  }).catch(() => { btn.disabled = true; btn.textContent = 'Kaydedilemedi, "Videoyu aç"a bas'; });
 }
 
 async function runVideo() {
