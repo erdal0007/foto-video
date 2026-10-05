@@ -194,7 +194,8 @@
       <section>
         <h2>4. Video modeli ve müzik</h2>
         <div class="tpls" id="quality">
-          <div class="tpl"><input type="radio" name="m" id="m-swap" value="swap" checked><label for="m-swap"><b>Birebir aynı video</b><span>Örnek videonun kendisi: aynı figürler, aynı müzik, aynı kamera. Sadece 3 kişinin yüzü sizinkiyle değişir. 10 sn, yaklaşık 1,7 $. 3 fotoğraf gerekir.</span></label></div>
+          <div class="tpl"><input type="radio" name="m" id="m-mc" value="mc" checked><label for="m-mc"><b>Gerçek hareket, en benzer (önerilen)</b><span>Örnek videodaki gerçek insanların hareketini sizin yüzlerinizle yapar. Önce herkesin yer aldığı bir kare üretilir, benziyorsa videoya çevrilir. Müzik örnek videodan gelir. 10 sn, yaklaşık 1,8 $. 3 fotoğraf gerekir.</span></label></div>
+          <div class="tpl"><input type="radio" name="m" id="m-swap" value="swap"><label for="m-swap"><b>Birebir aynı video</b><span>Örnek videonun kendisi: aynı figürler, aynı müzik, aynı kamera. Sadece 3 kişinin yüzü sizinkiyle değişir. 10 sn, yaklaşık 1,7 $. 3 fotoğraf gerekir.</span></label></div>
           <div class="tpl"><input type="radio" name="m" id="m-ref" value="ref"><label for="m-ref"><b>Benzer figürler, müzikli</b><span>Yapay zekâ hareketleri taklit eder, birebir olmaz. 8 sn, yaklaşık 2,5 $.</span></label></div>
           <div class="tpl"><input type="radio" name="m" id="m-seed" value="seed"><label for="m-seed"><b>En iyi, müzikli</b><span>Seedance 2.0. Davul zurna sesi dahil. En çok benzeyen sonuç. Yaklaşık 0,25 $/sn.</span></label></div>
           <div class="tpl"><input type="radio" name="m" id="m-k26" value="k26"><label for="m-k26"><b>Ekonomik, müzikli</b><span>Kling 2.6. En fazla 10 sn. Yaklaşık 0,15 $/sn.</span></label></div>
@@ -232,6 +233,7 @@
 const FAL = window.FAL_BASE || 'https://queue.fal.run';
 const FRAME_MODEL = 'fal-ai/nano-banana-pro/edit';
 const VIDEO = {
+  mc:   { model: 'fal-ai/kling-video/v3/pro/motion-control', rate: 0.168, max: 10, audio: true, fixed: 10, wide: true },
   swap: { model: 'fal-ai/kling-video/o1/video-to-video/edit', rate: 0.168, max: 10, audio: true, fixed: 10, noFrame: true },
   ref:  { model: 'bytedance/seedance-2.0/fast/reference-to-video', rate: 0.29, max: 8, audio: true, fixed: 8 },
   seed: { model: 'bytedance/seedance-2.0/fast/image-to-video', rate: 0.25, max: 15, audio: true },
@@ -461,8 +463,46 @@ async function resumePending() {
   }
 }
 
+// Örnek videodan bir kare alır: yapay zekâ, sahneyi ve duruşları bu kareye göre kurar.
+const refFrameCache = {};
+async function getRefFrame() {
+  if (window.__refFrame) return window.__refFrame;
+  const f = $('#refFile').files[0], key = f ? f.name + f.size : 'default';
+  if (refFrameCache[key]) return refFrameCache[key];
+  let blob = f;
+  if (!blob) { const r = await fetch('referans-halay-720.mp4'); if (!r.ok) throw new Error('Örnek video bulunamadı.'); blob = await r.blob(); }
+  const frame = await new Promise((res, rej) => {
+    const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto';
+    const u = URL.createObjectURL(blob);
+    const t = setTimeout(() => rej(new Error('Kare alınamadı.')), window.REF_FRAME_TIMEOUT || 8000);
+    v.onloadeddata = () => { try { v.currentTime = Math.min(0.5, (v.duration || 1) / 2); } catch (e) { rej(e); } };
+    v.onseeked = () => {
+      try {
+        const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        c.toBlob((b) => { clearTimeout(t); URL.revokeObjectURL(u); b ? res(b) : rej(new Error('Kare alınamadı.')); }, 'image/jpeg', 0.9);
+      } catch (e) { rej(e); }
+    };
+    v.onerror = () => rej(new Error('Kare alınamadı.'));
+    v.src = u; v.load();
+  });
+  return (refFrameCache[key] = (await uploadToFal(frame, 'hedef-kare.jpg')) || (await toDataUrl(frame)));
+}
+
 async function makeFrame() {
   const imgs = photos.filter(Boolean), n = imgs.length;
+  if (document.querySelector('input[name=m]:checked').value === 'mc') {
+    if (n !== 3) throw new Error('Bu seçenek için 3 kişinin fotoğrafı gerekir. Örnek videodaki üç kişinin yerine sizinkiler geçecek.');
+    let guide = null; try { guide = await getRefFrame(); } catch (e) {}
+    const tpl0 = TEMPLATES[0];
+    const prompt = guide
+      ? `Image 4 is the TARGET SCENE. Recreate image 4 as one photorealistic photo with exactly the same composition, camera angle, background, floor, lighting, clothing and body poses, but replace the three people in image 4 with the people from images 1, 2 and 3: the person from image 1 stands where the leftmost person is (holding the white handkerchief), image 2 in the middle, image 3 on the right. Each person's face, hairstyle, skin tone, age and body build must match their own photo exactly, sharp and instantly recognizable. Do not add or remove people. ${LOOK}`
+      : `Create one photorealistic photo of the 3 different people from the 3 reference photos (one person per photo, in the same order), ${tpl0.scene}. Medium-wide shot, everyone fully in frame from head to knees, faces sharp and clearly visible. ${LOOK}`;
+    const out = await falRun(FRAME_MODEL, { prompt, image_urls: guide ? imgs.concat(guide) : imgs, num_images: 1, aspect_ratio: '16:9', output_format: 'jpeg' }, 'Kare hazırlanıyor');
+    const url = out.images && out.images[0] && out.images[0].url;
+    if (!url) throw new Error('Kare üretilemedi, başka fotoğraflarla dene.');
+    return url;
+  }
   const tpl = TEMPLATES.find((t) => t.id === tplId);
   const who = n === 1 ? 'the person in the reference photo' : `the ${n} different people from the ${n} reference photos (one person per photo, in the same order)`;
   const prompt = `Create one photorealistic photo of ${who}, ${tpl.scene}. Medium-wide shot, everyone fully in frame from head to knees, faces sharp and clearly visible, natural candid smartphone photo. ${LOOK}`;
@@ -542,7 +582,11 @@ async function makeVideo(url) {
   if (m.audio) prompt += ' ' + tpl.audio;
   const neg = 'blur, distort, morphing faces, deformed, low quality, extra people';
   let body;
-  if (m.model.includes('reference-to-video')) {
+  const isMC = m.model.includes('motion-control');
+  if (isMC) {
+    const ref = await getRef();
+    body = { prompt: 'The three people dance exactly like in the reference video, same steps, same energy. Keep every face and body identical to the image, natural realistic motion.', image_url: url, video_url: ref, character_orientation: 'video', keep_original_sound: true };
+  } else if (m.model.includes('reference-to-video')) {
     const ref = await getRef();
     const p = 'Image 1 is the first frame and shows the people (keep their faces, hairstyles and clothes exactly as in image 1). Video 1 is a reference video of a Turkish halay dance. Make the people from image 1 perform exactly the same halay figures as in video 1: the same leg kicks, steps, shoulder holds, handkerchief waving, rhythm, positions and the same smooth sideways camera movement. ' + tpl.audio;
     body = { prompt: p.replace('Image 1', '@Image1').replace('image 1', '@Image1').replace('Video 1', '@Video1').replace('video 1', '@Video1'), image_urls: [url], video_urls: [ref], duration: String(dur), resolution: '720p', aspect_ratio: '16:9', generate_audio: true };
@@ -553,7 +597,7 @@ async function makeVideo(url) {
   try { out = await falRun(m.model, body, 'Video hazırlanıyor', { video: tplLabel() }); }
   catch (e) {
     // Bazı modeller süreyi sayı olarak ister; bir kez sayıyla dene.
-    if (/duration/i.test(e.message)) { body.duration = dur; out = await falRun(m.model, body, 'Video hazırlanıyor', { video: tplLabel() }); } else throw e;
+    if (!isMC && /duration/i.test(e.message)) { body.duration = dur; out = await falRun(m.model, body, 'Video hazırlanıyor', { video: tplLabel() }); } else throw e;
   }
   const v = out.video && out.video.url;
   if (!v) throw new Error('Video üretilemedi.');
@@ -570,7 +614,7 @@ function updateEstimate() {
 document.querySelectorAll('input[name=m],input[name=dur]').forEach((r) => r.addEventListener('change', updateEstimate));
 
 async function runFrame() {
-  $('#stage').classList.toggle('wide', document.querySelector('input[name=ar]:checked').value === '16:9');
+  $('#stage').classList.toggle('wide', document.querySelector('input[name=ar]:checked').value === '16:9' || !!VIDEO[document.querySelector('input[name=m]:checked').value].wide);
   $('#err').textContent = ''; setActions(''); $('#go').disabled = true; busyFrame = null;
   stageMsg('Kare hazırlanıyor', 'Genelde 30-60 saniye sürer.', true); focusStage();
   try {
@@ -592,6 +636,7 @@ async function runFrame() {
 function tplLabel() {
   const m = document.querySelector('input[name=m]:checked');
   if (m && m.value === 'swap') return 'Birebir aynı video';
+  if (m && m.value === 'mc') return 'Gerçek hareket (stüdyo halayı)';
   const t = TEMPLATES.find((x) => x.id === tplId);
   return t ? t.name : 'Video';
 }
@@ -753,7 +798,7 @@ function syncGo() {
   const noFrame = VIDEO[document.querySelector('input[name=m]:checked').value].noFrame;
   $('#go').textContent = noFrame ? 'Videoyu üret' : 'Kare ve videoyu üret';
   $('#chkWrap').style.display = noFrame ? 'none' : 'flex';
-  $('#stage').classList.toggle('wide', noFrame || document.querySelector('input[name=ar]:checked').value === '16:9');
+  $('#stage').classList.toggle('wide', noFrame || !!VIDEO[document.querySelector('input[name=m]:checked').value].wide || document.querySelector('input[name=ar]:checked').value === '16:9');
 }
 document.querySelectorAll('input[name=m],input[name=ar]').forEach((r) => r.addEventListener('change', syncGo));
 window.__app = { photos, renderSlots };
