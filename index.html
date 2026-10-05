@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#C23B22">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Foto Video">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Foto Video</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #E9EEF0;
+    --ink: #14262B;
+    --ink-soft: #4C6168;
+    --line: #C5D1D5;
+    --kilim: #C23B22;
+    --kilim-dark: #9E2D18;
+    --saffron: #F0B33A;
+    --white: #FFFFFF;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); background: var(--paper); color: var(--ink);
+    font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 17px; line-height: 1.5;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 20px 80px; }
+  h1, h2 { font-family: 'Bricolage Grotesque', sans-serif; margin: 0; letter-spacing: -0.02em; }
+  h1 { font-size: clamp(2.6rem, 8vw, 5rem); font-weight: 800; line-height: 0.95; }
+  h2 { font-size: 1.35rem; font-weight: 800; margin-bottom: 4px; }
+  .lead { color: var(--ink-soft); max-width: 46ch; margin: 14px 0 0; }
+
+  /* Kilim şeridi: sayfanın tek süslemesi */
+  .kilim {
+    height: 14px; margin: 0 0 26px;
+    background:
+      linear-gradient(135deg, var(--kilim) 25%, transparent 25%) -7px 0 / 14px 14px,
+      linear-gradient(225deg, var(--kilim) 25%, transparent 25%) -7px 0 / 14px 14px,
+      linear-gradient(315deg, var(--saffron) 25%, transparent 25%) 0 0 / 14px 14px,
+      linear-gradient(45deg, var(--saffron) 25%, var(--ink) 25%) 0 0 / 14px 14px;
+  }
+
+  header { margin-bottom: 36px; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 36px; }
+  @media (min-width: 880px) { .grid { grid-template-columns: 1.1fr 0.9fr; gap: 56px; } }
+
+  section { margin-bottom: 30px; }
+  .hint { color: var(--ink-soft); font-size: 0.92rem; margin: 0 0 14px; }
+
+  .tpls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .tpl { position: relative; }
+  .tpl input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .tpl label {
+    display: block; height: 100%; padding: 14px 14px 12px; background: var(--white);
+    border: 2px solid var(--line); border-radius: 10px;
+  }
+  .tpl label b { display: block; font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.1rem; }
+  .tpl label span { color: var(--ink-soft); font-size: 0.88rem; line-height: 1.3; display: block; margin-top: 2px; }
+  .tpl input:checked + label { border-color: var(--kilim); box-shadow: 0 0 0 3px rgba(194,59,34,.18); }
+  .tpl input:focus-visible + label { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+  .slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .slot {
+    position: relative; aspect-ratio: 3/4; background: var(--white); border: 2px dashed var(--line);
+    border-radius: 10px; overflow: hidden; display: grid; place-items: center; text-align: center;
+    color: var(--ink-soft); font-size: 0.9rem; cursor: pointer;
+  }
+  .slot:hover, .slot:focus-within { border-color: var(--ink); }
+  .slot input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .slot .rm {
+    position: absolute; top: 6px; right: 6px; z-index: 2; width: 30px; height: 30px; border: 0; border-radius: 50%;
+    background: var(--ink); color: var(--white); font-size: 16px; cursor: pointer; display: none;
+  }
+  .slot.has .rm { display: block; }
+  .slot.has { border-style: solid; border-color: var(--ink); }
+  .slot.has span { display: none; }
+
+  .pw { margin-bottom: 26px; }
+  .pw .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pw button { font: inherit; font-weight: 600; padding: 11px 16px; border: 2px solid var(--ink); background: var(--white); border-radius: 8px; cursor: pointer; }
+  .ok { color: #1F7A3E; font-weight: 600; margin: 8px 0 0; }
+  input[type=password] {
+    width: 100%; flex: 1; min-width: 220px; padding: 11px 12px; font: inherit; border: 2px solid var(--line);
+    border-radius: 8px; background: var(--white);
+  }
+
+  @media (max-width: 600px) { button.go { width: 100%; padding: 18px; } .slot { font-size: 0.8rem; } .wrap { padding-top: 14px; } }
+  button.go {
+    font: inherit; font-weight: 600; font-size: 1.05rem; color: var(--white); background: var(--kilim);
+    border: 0; border-radius: 10px; padding: 15px 26px; cursor: pointer; min-width: 220px;
+  }
+  button.go:hover:not(:disabled) { background: var(--kilim-dark); }
+  button.go:disabled { background: #9AA9AE; cursor: not-allowed; }
+  button.go:focus-visible, .rm:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+  .stage {
+    background: var(--ink); color: var(--white); border-radius: 14px; aspect-ratio: 9/16;
+    max-width: 380px; width: 100%; margin: 0 auto; display: grid; place-items: center; overflow: hidden;
+    position: relative;
+  }
+  @media (min-width: 880px) { .stage { position: sticky; top: 20px; } }
+  .stage video { width: 100%; height: 100%; object-fit: cover; }
+  .stage .msg { padding: 28px; text-align: center; }
+  .stage .msg p { margin: 8px 0 0; color: #B8C7CB; font-size: 0.95rem; }
+  .stage .big { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.5rem; font-weight: 800; }
+  .bar { height: 6px; background: #2C434A; border-radius: 3px; margin: 18px auto 0; width: 70%; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 35%; background: var(--saffron); animation: slide 1.4s ease-in-out infinite; }
+  @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+  @media (prefers-reduced-motion: reduce) { .bar i { animation: none; width: 60%; } }
+
+  .actions { max-width: 380px; margin: 14px auto 0; display: none; gap: 10px; }
+  .actions.on { display: flex; flex-wrap: wrap; }
+  .actions button { flex: 1; min-width: 140px; font: inherit; font-weight: 600; padding: 12px; border-radius: 10px; cursor: pointer; border: 2px solid var(--ink); background: var(--white); color: var(--ink); }
+  .actions button.main { background: var(--kilim); border-color: var(--kilim); color: var(--white); }
+  .stage img.frame { width: 100%; height: 100%; object-fit: cover; }
+  .actions a {
+    flex: 1; text-align: center; padding: 12px; border-radius: 10px; font-weight: 600; text-decoration: none;
+    background: var(--white); color: var(--ink); border: 2px solid var(--ink); min-width: 140px;
+  }
+  .err { color: var(--kilim-dark); font-weight: 600; margin: 12px 0 0; min-height: 1.4em; }
+  .note { font-size: 0.85rem; color: var(--ink-soft); margin-top: 26px; max-width: 52ch; }
+  .stage.wide { aspect-ratio: 16/9; max-width: 100%; }
+  .stage.wide + .actions, .actions { max-width: 100%; }
+  .stage { position: relative; }
+  .stage .overlay { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 20px 22px; text-align: center; background: linear-gradient(transparent, rgba(0,0,0,.82)); }
+  .stage .overlay p { margin: 6px 0 0; color: #D6E0E3; font-size: .95rem; }
+  .stage .playbtn { position: absolute; inset: 0; margin: auto; width: 96px; height: 96px; border-radius: 50%; border: 0; background: var(--kilim); color: #fff; font-size: 40px; cursor: pointer; display: grid; place-items: center; }
+  .chk { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; font-size: .95rem; }
+  .chk input { width: 22px; height: 22px; margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kilim" aria-hidden="true"></div>
+    <h1>Fotoğraflarınız<br>halay çekiyor.</h1>
+    <p class="lead">Fotoğrafları yükle, şablonu seç, 5-10 saniyelik video üret.</p>
+  </header>
+
+  <div class="grid">
+    <main>
+      <div class="pw">
+        <h2>fal.ai anahtarı</h2>
+        <p class="hint">Anahtarı bir kez yapıştır. Yalnızca bu bilgisayarın tarayıcısında saklanır.</p>
+        <div class="row">
+          <input type="password" id="key" placeholder="Anahtarı buraya yapıştır" autocomplete="off" aria-label="fal.ai anahtarı">
+          <button id="saveKey" type="button">Kaydet</button>
+        </div>
+        <p class="ok" id="keyOk" hidden>Anahtar kaydedildi.</p>
+      </div>
+
+      <section>
+        <h2>1. Şablon seç</h2>
+        <div class="tpls" id="tpls"></div>
+      </section>
+
+      <section>
+        <h2>2. Fotoğrafları yükle</h2>
+        <p class="hint">1 ile 3 kişi. Yüzü net, önden çekilmiş, iyi ışıklı fotoğraflar en iyi sonucu verir. Yalnızca izni olan kişilerin fotoğrafını yükle.</p>
+        <div class="slots" id="slots"></div>
+      </section>
+
+      <section>
+        <h2>3. Biçim ve süre</h2>
+        <div class="tpls">
+          <div class="tpl"><input type="radio" name="ar" id="ar-w" value="16:9" checked><label for="ar-w"><b>Yatay (16:9)</b><span>Televizyon, WhatsApp, YouTube.</span></label></div>
+          <div class="tpl"><input type="radio" name="ar" id="ar-v" value="9:16"><label for="ar-v"><b>Dikey (9:16)</b><span>Instagram, TikTok, telefon.</span></label></div>
+          <div class="tpl"><input type="radio" name="dur" id="d5" value="5" checked><label for="d5"><b>5 saniye</b><span>Daha ucuz.</span></label></div>
+          <div class="tpl"><input type="radio" name="dur" id="d10" value="10"><label for="d10"><b>10 saniye</b><span>İki kat pahalı, daha uzun.</span></label></div>
+          <div class="tpl"><input type="radio" name="dur" id="d15" value="15"><label for="d15"><b>15 saniye</b><span>Yalnızca "En iyi" modelde. Üç kat pahalı.</span></label></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>4. Video modeli ve müzik</h2>
+        <div class="tpls" id="quality">
+          <div class="tpl"><input type="radio" name="m" id="m-swap" value="swap" checked><label for="m-swap"><b>Birebir aynı video</b><span>Örnek videonun kendisi: aynı figürler, aynı müzik, aynı kamera. Sadece 3 kişinin yüzü sizinkiyle değişir. 10 sn, yaklaşık 1,7 $. 3 fotoğraf gerekir.</span></label></div>
+          <div class="tpl"><input type="radio" name="m" id="m-ref" value="ref"><label for="m-ref"><b>Benzer figürler, müzikli</b><span>Yapay zekâ hareketleri taklit eder, birebir olmaz. 8 sn, yaklaşık 2,5 $.</span></label></div>
+          <div class="tpl"><input type="radio" name="m" id="m-seed" value="seed"><label for="m-seed"><b>En iyi, müzikli</b><span>Seedance 2.0. Davul zurna sesi dahil. En çok benzeyen sonuç. Yaklaşık 0,25 $/sn.</span></label></div>
+          <div class="tpl"><input type="radio" name="m" id="m-k26" value="k26"><label for="m-k26"><b>Ekonomik, müzikli</b><span>Kling 2.6. En fazla 10 sn. Yaklaşık 0,15 $/sn.</span></label></div>
+          <div class="tpl"><input type="radio" name="m" id="m-k21" value="k21"><label for="m-k21"><b>Müziksiz, ucuz</b><span>Kling 2.1. Sessiz video. Yaklaşık 0,05 $/sn.</span></label></div>
+        </div>
+        <p class="hint" id="est"></p>
+        <p class="hint">Örnek video hazır gelir. Başka bir örnek video kullanmak istersen buradan seç (3-10 sn, en az 720 piksel yükseklik, en fazla 8 MB):</p>
+        <input type="file" id="refFile" accept="video/*" aria-label="Kendi örnek hareket videon">
+      </section>
+
+      <label class="chk" id="chkWrap"><input type="checkbox" id="checkFirst"><span>Önce kareyi göster, ben onaylayınca videoyu üret. (İşaretlemezsen kare ve video otomatik arka arkaya üretilir.)</span></label>
+      <button class="go" id="go" disabled>Önce kareyi üret</button>
+      <p class="err" id="err" role="alert"></p>
+      <p class="note">İki aşamalı çalışır: önce herkesin yüzünü içeren tek bir kare üretilir (yaklaşık 0,15 $). Benziyorsa videoya çevirirsin (süreye göre değişir, seçince altında tahmini fiyat görünür). Benzemiyorsa videoya para harcamadan yeni kare üretirsin. Fiyatlar fal.ai'a göre değişebilir.</p>
+    </main>
+
+    <aside>
+      <div class="stage" id="stage" aria-live="polite">
+        <div class="msg"><div class="big">Video burada çıkacak</div><p>Şablonu seç, fotoğrafları ekle.</p></div>
+      </div>
+      <div class="actions" id="actions"></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const FAL = window.FAL_BASE || 'https://queue.fal.run';
+const FRAME_MODEL = 'fal-ai/nano-banana-pro/edit';
+const VIDEO = {
+  swap: { model: 'fal-ai/kling-video/o1/video-to-video/edit', rate: 0.168, max: 10, audio: true, fixed: 10, noFrame: true },
+  ref:  { model: 'bytedance/seedance-2.0/fast/reference-to-video', rate: 0.29, max: 8, audio: true, fixed: 8 },
+  seed: { model: 'bytedance/seedance-2.0/fast/image-to-video', rate: 0.25, max: 15, audio: true },
+  k26:  { model: 'fal-ai/kling-video/v2.6/pro/image-to-video', rate: 0.15, max: 10, audio: true },
+  k21:  { model: 'fal-ai/kling-video/v2.1/standard/image-to-video', rate: 0.05, max: 10, audio: false },
+};
+const LOOK = 'Keep every face, hairstyle, skin tone and age exactly identical to the reference photos so each person is instantly recognizable.';
+const MOTION_END = ' Keep all faces exactly as in the photo, stable and undistorted, natural realistic motion, handheld smartphone video.';
+
+// scene = ilk kare (resim), motion = videodaki hareket
+const TEMPLATES = [
+  { id: 'studyo', name: 'Stüdyo halayı', desc: 'Televizyon stüdyosunda, mendilli ve davullu halay.',
+    scene: 'a Turkish TV studio set with a warm wooden floor, glowing blue ornamental geometric panels, golden star lamps and a few people sitting in the background, a large davul drum partially visible in the left foreground; they stand shoulder to shoulder in a row dancing halay, the first person holds a white handkerchief (mendil) in a raised hand and kicks one leg up, the others hold each other by the shoulders and kick in sync, everyone laughing',
+    motion: 'The three people dance a lively Turkish halay in a TV studio, shoulder to shoulder, kicking and stomping in sync. The first person waves a white handkerchief in the air and kicks his leg up high, the others copy the steps, laughing. A large davul drum swings slightly in the foreground. The camera moves slowly and smoothly sideways with a slight handheld feel.',
+    audio: 'Audio: energetic Turkish halay music with a loud davul drum and zurna, rhythmic clapping and cheering crowd, no speech.' },
+  { id: 'halay', name: 'Halay', desc: 'Omuz omuza, el ele halay çekiyorlar.',
+    scene: 'standing side by side holding hands in a cozy Turkish living room, a large davul drum visible in the corner, warm lighting, smiling and laughing, mid-halay pose',
+    motion: 'The people dance a lively Turkish halay, holding hands, synchronized kicking steps and swaying, laughing.',
+    audio: 'Audio: energetic Turkish halay music with a loud davul drum and zurna, rhythmic clapping, joyful laughter, no speech.' },
+  { id: 'dugun', name: 'Düğün pisti', desc: 'Davul zurna eşliğinde düğün eğlencesi.',
+    scene: 'dancing joyfully at a Turkish wedding hall with festive decorations and cheering guests in the background, arms raised, smiling',
+    motion: 'The people clap above their heads and dance joyfully at a wedding, guests cheering in the background.',
+    audio: 'Audio: lively Turkish wedding music with davul and zurna, clapping and cheering guests, no speech.' },
+  { id: 'dans', name: 'Trend dans', desc: 'Kameraya bakıp eğlenceli bir dans yapıyorlar.',
+    scene: 'standing close together facing the camera in a bright room, playful expressions, mid-dance pose',
+    motion: 'The people perform a fun viral dance routine in perfect sync, facing the camera, playful and energetic.',
+    audio: 'Audio: upbeat catchy dance music with a strong beat, no speech.' },
+  { id: 'sarilma', name: 'Sarılma', desc: 'Birbirlerine sarılıp gülüyorlar.',
+    scene: 'hugging each other warmly and laughing, looking at the camera, cozy home setting',
+    motion: 'The people hug each other warmly, laugh together and look at the camera with happy smiles.',
+    audio: 'Audio: soft warm emotional piano music, gentle ambience, no speech.' },
+];
+
+const $ = (s) => document.querySelector(s);
+const photos = [null, null, null];
+let tplId = TEMPLATES[0].id, frameUrl = null;
+const sleep = () => new Promise((r) => setTimeout(r, window.POLL_MS || 4000));
+
+const keyInput = $('#key');
+keyInput.value = localStorage.getItem('falKey') || '';
+$('#saveKey').addEventListener('click', () => {
+  localStorage.setItem('falKey', keyInput.value.trim());
+  $('#keyOk').hidden = false;
+  setTimeout(() => ($('#keyOk').hidden = true), 2500);
+});
+
+$('#tpls').innerHTML = TEMPLATES.map((t, i) => `
+  <div class="tpl">
+    <input type="radio" name="tpl" id="t-${t.id}" value="${t.id}" ${i === 0 ? 'checked' : ''}>
+    <label for="t-${t.id}"><b>${t.name}</b><span>${t.desc}</span></label>
+  </div>`).join('');
+document.querySelectorAll('input[name=tpl]').forEach((r) => r.addEventListener('change', () => { tplId = r.value; }));
+
+function renderSlots() {
+  $('#slots').innerHTML = photos.map((p, i) => `
+    <div class="slot ${p ? 'has' : ''}">
+      <span>${i + 1}. kişi<br>Fotoğraf ekle</span>
+      ${p ? `<img src="${p}" alt="${i + 1}. kişinin fotoğrafı">` : ''}
+      <input type="file" accept="image/*" data-i="${i}" aria-label="${i + 1}. kişi fotoğrafı">
+      <button class="rm" data-rm="${i}" aria-label="${i + 1}. fotoğrafı kaldır">×</button>
+    </div>`).join('');
+  document.querySelectorAll('.slot input').forEach((el) => el.addEventListener('change', onFile));
+  document.querySelectorAll('.rm').forEach((b) => b.addEventListener('click', (e) => {
+    e.preventDefault(); photos[+b.dataset.rm] = null; renderSlots();
+  }));
+  $('#go').disabled = !photos.some(Boolean);
+}
+
+function shrink(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const max = 1280, k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.92));
+    };
+    img.onerror = () => reject(new Error('Fotoğraf okunamadı.'));
+    img.src = url;
+  });
+}
+async function onFile(e) {
+  const f = e.target.files[0]; if (!f) return;
+  try { photos[+e.target.dataset.i] = await shrink(f); renderSlots(); }
+  catch (err) { $('#err').textContent = err.message; }
+}
+
+let busyFrame = null;
+function focusStage() { const el = $('#stage'); if (el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+function stageMsg(big, small, loading) {
+  const bar = loading ? '<div class="bar"><i></i></div>' : '';
+  if (busyFrame) $('#stage').innerHTML = `<img class="frame" src="${busyFrame}" alt="Üretilen kare"><div class="overlay"><div class="big">${big}</div><p>${small || ''}</p>${bar}</div>`;
+  else $('#stage').innerHTML = `<div class="msg"><div class="big">${big}</div><p>${small || ''}</p>${bar}</div>`;
+}
+function setActions(html) { $('#actions').innerHTML = html; $('#actions').classList.toggle('on', !!html); }
+function falError(d, status) {
+  const x = d && (d.detail || d.error || d.message);
+  if (typeof x === 'string') return x;
+  if (Array.isArray(x) && x[0]) return x.slice(0, 3).map((e) => (e.loc ? e.loc.filter((p) => p !== 'body').join('.') + ': ' : '') + (e.msg || JSON.stringify(e))).join(' | ');
+  if (status === 401 || status === 403) return 'fal.ai anahtarı geçersiz ya da bakiye yok.';
+  if (status === 422) return 'Girdi geçersiz (422). Fotoğraflarda net bir yüz olmayabilir ya da video koşulları uymuyor.';
+  return `Video servisi hata verdi (${status}).`;
+}
+function getKey() {
+  const key = (localStorage.getItem('falKey') || keyInput.value).trim();
+  if (!key) throw new Error('Önce yukarıya fal.ai anahtarını yapıştırıp Kaydet\'e bas.');
+  return key;
+}
+
+// Bir fal.ai işini gönderir, bitene kadar bekler, sonuç JSON'unu döndürür.
+async function falRun(model, input, label) {
+  const headers = { Authorization: `Key ${getKey()}`, 'Content-Type': 'application/json' };
+  const r = await fetch(`${FAL}/${model}`, { method: 'POST', headers, body: JSON.stringify(input) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.request_id) throw new Error(falError(d, r.status));
+  const t0 = Date.now();
+  for (;;) {
+    await sleep();
+    const s = await fetch(d.status_url, { headers });
+    const st = await s.json().catch(() => ({}));
+    if (!s.ok) throw new Error(falError(st, s.status));
+    if (st.status === 'COMPLETED') {
+      const o = await fetch(d.response_url, { headers });
+      const out = await o.json().catch(() => ({}));
+      if (!o.ok) throw new Error(falError(out, o.status) + ' (Fotoğraf uygun olmayabilir, başka bir fotoğrafla dene.)');
+      return out;
+    }
+    const sec = Math.round((Date.now() - t0) / 1000);
+    stageMsg(label, `${sec} sn geçti. Sayfayı kapatma.`, true);
+    if (sec > 600) throw new Error('Çok uzun sürdü, tekrar dene.');
+  }
+}
+
+async function makeFrame() {
+  const imgs = photos.filter(Boolean), n = imgs.length;
+  const tpl = TEMPLATES.find((t) => t.id === tplId);
+  const who = n === 1 ? 'the person in the reference photo' : `the ${n} different people from the ${n} reference photos (one person per photo, in the same order)`;
+  const prompt = `Create one photorealistic photo of ${who}, ${tpl.scene}. Medium-wide shot, everyone fully in frame from head to knees, faces sharp and clearly visible, natural candid smartphone photo. ${LOOK}`;
+  const out = await falRun(FRAME_MODEL, { prompt, image_urls: imgs, num_images: 1, aspect_ratio: document.querySelector('input[name=ar]:checked').value, output_format: 'jpeg' }, 'Kare hazırlanıyor');
+  const url = out.images && out.images[0] && out.images[0].url;
+  if (!url) throw new Error('Kare üretilemedi, başka fotoğraflarla dene.');
+  return url;
+}
+
+
+// Dosyayı fal.ai depolamasına yükler, açık bir adres döndürür. Başarısız olursa null.
+async function uploadToFal(blob, name) {
+  try {
+    const key = getKey();
+    const base = window.FAL_REST || 'https://rest.alpha.fal.ai';
+    const init = await fetch(`${base}/storage/upload/initiate?storage_type=fal-cdn-v3`, {
+      method: 'POST', headers: { Authorization: `Key ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content_type: blob.type || 'application/octet-stream', file_name: name }),
+    });
+    if (!init.ok) return null;
+    const { upload_url, file_url } = await init.json();
+    const put = await fetch(upload_url, { method: 'PUT', headers: { 'Content-Type': blob.type || 'application/octet-stream' }, body: blob });
+    return put.ok ? file_url : null;
+  } catch (e) { return null; }
+}
+async function dataUrlToBlob(u) { return (await fetch(u)).blob(); }
+// Fotoğrafı yükler; olmazsa data adresiyle devam eder.
+async function photoUrl(u, i) {
+  const blob = await dataUrlToBlob(u);
+  return (await uploadToFal(blob, `kisi${i + 1}.jpg`)) || u;
+}
+
+let refData = null;
+const toDataUrl = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Video okunamadı.')); r.readAsDataURL(blob); });
+async function getRef() {
+  const f = $('#refFile').files[0];
+  if (f) {
+    if (f.size > 8 * 1024 * 1024) throw new Error('Örnek video 8 MB\'tan küçük olmalı.');
+    return (await uploadToFal(f, 'ornek.mp4')) || toDataUrl(f);
+  }
+  if (refData) return refData;
+  let r;
+  try { r = await fetch('referans-halay-720.mp4'); } catch (e) { r = null; }
+  if (!r || !r.ok) throw new Error('referans-halay-720.mp4 bulunamadı. Zip içindeki tüm dosyalar birlikte yayınlanmalı ya da yukarıdan kendi örnek videonu seç.');
+  const blob = await r.blob();
+  refData = (await uploadToFal(blob, 'referans-halay.mp4')) || (await toDataUrl(blob));
+  return refData;
+}
+
+async function makeVideo(url) {
+  const tpl = TEMPLATES.find((t) => t.id === tplId);
+  const m = VIDEO[document.querySelector('input[name=m]:checked').value];
+  const dur = m.fixed || Math.min(+document.querySelector('input[name=dur]:checked').value, m.max);
+  let prompt = tpl.motion + MOTION_END;
+  if (m.audio) prompt += ' ' + tpl.audio;
+  const neg = 'blur, distort, morphing faces, deformed, low quality, extra people';
+  let body;
+  if (m.model.includes('reference-to-video')) {
+    const ref = await getRef();
+    const p = 'Image 1 is the first frame and shows the people (keep their faces, hairstyles and clothes exactly as in image 1). Video 1 is a reference video of a Turkish halay dance. Make the people from image 1 perform exactly the same halay figures as in video 1: the same leg kicks, steps, shoulder holds, handkerchief waving, rhythm, positions and the same smooth sideways camera movement. ' + tpl.audio;
+    body = { prompt: p.replace('Image 1', '@Image1').replace('image 1', '@Image1').replace('Video 1', '@Video1').replace('video 1', '@Video1'), image_urls: [url], video_urls: [ref], duration: String(dur), resolution: '720p', aspect_ratio: '16:9', generate_audio: true };
+  } else if (m.model.startsWith('bytedance')) body = { prompt, image_url: url, duration: String(dur), resolution: '720p', aspect_ratio: 'auto', generate_audio: true };
+  else if (m.audio) body = { prompt, start_image_url: url, duration: String(dur), generate_audio: true, negative_prompt: neg };
+  else body = { prompt, image_url: url, duration: String(dur), negative_prompt: neg };
+  let out;
+  try { out = await falRun(m.model, body, 'Video hazırlanıyor'); }
+  catch (e) {
+    // Bazı modeller süreyi sayı olarak ister; bir kez sayıyla dene.
+    if (/duration/i.test(e.message)) { body.duration = dur; out = await falRun(m.model, body, 'Video hazırlanıyor'); } else throw e;
+  }
+  const v = out.video && out.video.url;
+  if (!v) throw new Error('Video üretilemedi.');
+  return v;
+}
+
+function updateEstimate() {
+  const m = VIDEO[document.querySelector('input[name=m]:checked').value];
+  const d = +document.querySelector('input[name=dur]:checked').value;
+  const eff = m.fixed || Math.min(d, m.max);
+  const cost = (m.rate * eff + (m.noFrame ? 0 : 0.15)).toFixed(2).replace('.', ',');
+  $('#est').textContent = `Tahmini toplam: yaklaşık ${cost} $ (${m.noFrame ? '' : 'kare + '}${eff} sn video).` + (d > m.max ? ` Bu modelde en fazla ${m.max} sn üretilir.` : '') + ' Fiyatlar fal.ai\'a göre değişebilir.';
+}
+document.querySelectorAll('input[name=m],input[name=dur]').forEach((r) => r.addEventListener('change', updateEstimate));
+
+async function runFrame() {
+  $('#stage').classList.toggle('wide', document.querySelector('input[name=ar]:checked').value === '16:9');
+  $('#err').textContent = ''; setActions(''); $('#go').disabled = true; busyFrame = null;
+  stageMsg('Kare hazırlanıyor', 'Genelde 30-60 saniye sürer.', true); focusStage();
+  try {
+    frameUrl = await makeFrame();
+    if (!$('#checkFirst').checked) { await runVideo(); return; }
+    $('#stage').innerHTML = `<img class="frame" src="${frameUrl}" alt="Üretilen kare">`;
+    setActions(`<button class="main" id="toVideo">Benziyor, videoya çevir</button><button id="again">Benzemiyor, yeni kare üret</button>`);
+    $('#toVideo').addEventListener('click', runVideo);
+    $('#again').addEventListener('click', runFrame);
+    focusStage();
+  } catch (err) {
+    stageMsg('Üretilemedi', err.message); $('#err').textContent = err.message;
+  } finally { $('#go').disabled = !photos.some(Boolean); }
+}
+
+
+async function runSwap() {
+  $('#err').textContent = ''; setActions(''); $('#go').disabled = true;
+  const imgs = photos.filter(Boolean);
+  try {
+    if (imgs.length !== 3) throw new Error('Bu seçenek için 3 kişinin fotoğrafı gerekir. Örnek videodaki üç kişinin yerine sizinkiler geçecek.');
+    busyFrame = null; $('#stage').classList.add('wide');
+    stageMsg('Video hazırlanıyor', 'Genelde 2-5 dakika sürer. Sayfayı kapatma.', true); focusStage();
+    const ref = await getRef();
+    stageMsg('Video hazırlanıyor', 'Fotoğraflar yükleniyor...', true);
+    const imgUrls = await Promise.all(imgs.map(photoUrl));
+    const prompt = 'Replace the three dancing people in the video: the person on the left who holds the white handkerchief with @Element1, the person in the middle with @Element2, and the person on the right with @Element3. Keep exactly the same movements, dance steps, timing, background and camera movement as in the original video. The new people must keep their own faces, hair and skin tone exactly as in their element images.';
+    const mk = (withRef) => ({ prompt, video_url: ref, keep_audio: true, elements: imgUrls.map((u) => withRef ? { frontal_image_url: u, reference_image_urls: [u] } : { frontal_image_url: u }) });
+    let out;
+    try { out = await falRun(VIDEO.swap.model, mk(true), 'Video hazırlanıyor'); }
+    catch (e) {
+      if (/reference|element/i.test(e.message)) out = await falRun(VIDEO.swap.model, mk(false), 'Video hazırlanıyor'); else throw e;
+    }
+    const v = out.video && out.video.url;
+    if (!v) throw new Error('Video üretilemedi.');
+    showVideo(v);
+  } catch (err) {
+    stageMsg('Video üretilemedi', err.message); $('#err').textContent = err.message;
+  } finally { $('#go').disabled = !photos.some(Boolean); }
+}
+
+function showVideo(url) {
+  busyFrame = null;
+  // Ses için otomatik oynatma yok: Safari ve diğer tarayıcılar sesli videoyu kendiliğinden başlatmaz.
+  $('#stage').innerHTML = `<video src="${url}" loop playsinline controls preload="auto"></video><button class="playbtn" id="playbtn" aria-label="Videoyu oynat">&#9654;</button>`;
+  const v = $('#stage video');
+  $('#playbtn').addEventListener('click', () => { v.play().catch(() => {}); });
+  v.addEventListener('play', () => { const b = $('#playbtn'); if (b) b.remove(); });
+  v.addEventListener('error', () => { $('#err').textContent = 'Video bu tarayıcıda oynamadı. Aşağıdaki "Videoyu aç / indir" bağlantısını kullan.'; });
+  setActions(`<a href="${url}" target="_blank" rel="noopener">Videoyu aç / indir</a><button id="again2">Yeniden dene</button>`);
+  $('#again2').addEventListener('click', () => (VIDEO[document.querySelector('input[name=m]:checked').value].noFrame ? runSwap() : runFrame()));
+  focusStage();
+}
+
+async function runVideo() {
+  $('#err').textContent = ''; setActions(''); busyFrame = frameUrl;
+  stageMsg('Video hazırlanıyor', 'Genelde 1-3 dakika sürer. Sayfayı kapatma.', true); focusStage();
+  try {
+    const url = await makeVideo(frameUrl);
+    showVideo(url);
+  } catch (err) {
+    busyFrame = null;
+    $('#stage').innerHTML = `<img class="frame" src="${frameUrl}" alt="Üretilen kare">`;
+    $('#err').textContent = err.message;
+    setActions(`<button class="main" id="toVideo">Videoyu tekrar dene</button><button id="again">Yeni kare üret</button>`);
+    $('#toVideo').addEventListener('click', runVideo);
+    $('#again').addEventListener('click', runFrame);
+  }
+}
+
+$('#go').addEventListener('click', () => (VIDEO[document.querySelector('input[name=m]:checked').value].noFrame ? runSwap() : runFrame()));
+function syncGo() {
+  const noFrame = VIDEO[document.querySelector('input[name=m]:checked').value].noFrame;
+  $('#go').textContent = noFrame ? 'Videoyu üret' : 'Kare ve videoyu üret';
+  $('#chkWrap').style.display = noFrame ? 'none' : 'flex';
+  $('#stage').classList.toggle('wide', noFrame || document.querySelector('input[name=ar]:checked').value === '16:9');
+}
+document.querySelectorAll('input[name=m],input[name=ar]').forEach((r) => r.addEventListener('change', syncGo));
+window.__app = { photos, renderSlots };
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+renderSlots();
+updateEstimate();
+syncGo();
+</script>
+</body>
+</html>
