@@ -1,815 +1,694 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#C23B22">
-<meta name="mobile-web-app-capable" content="yes">
+<title>Foto Video</title>
+<meta name="theme-color" content="#0B0D12">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Foto Video">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
-<title>Foto Video</title>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --paper: #E9EEF0;
-    --ink: #14262B;
-    --ink-soft: #4C6168;
-    --line: #C5D1D5;
-    --kilim: #C23B22;
-    --kilim-dark: #9E2D18;
-    --saffron: #F0B33A;
-    --white: #FFFFFF;
-  }
-  * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); background: var(--paper); color: var(--ink);
-    font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 17px; line-height: 1.5;
-  }
-  .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 20px 80px; }
-  h1, h2 { font-family: 'Bricolage Grotesque', sans-serif; margin: 0; letter-spacing: -0.02em; }
-  h1 { font-size: clamp(2.6rem, 8vw, 5rem); font-weight: 800; line-height: 0.95; }
-  h2 { font-size: 1.35rem; font-weight: 800; margin-bottom: 4px; }
-  .lead { color: var(--ink-soft); max-width: 46ch; margin: 14px 0 0; }
-
-  /* Kilim şeridi: sayfanın tek süslemesi */
-  .kilim {
-    height: 14px; margin: 0 0 26px;
-    background:
-      linear-gradient(135deg, var(--kilim) 25%, transparent 25%) -7px 0 / 14px 14px,
-      linear-gradient(225deg, var(--kilim) 25%, transparent 25%) -7px 0 / 14px 14px,
-      linear-gradient(315deg, var(--saffron) 25%, transparent 25%) 0 0 / 14px 14px,
-      linear-gradient(45deg, var(--saffron) 25%, var(--ink) 25%) 0 0 / 14px 14px;
-  }
-
-  header { margin-bottom: 36px; }
-  .grid { display: grid; grid-template-columns: 1fr; gap: 36px; }
-  @media (min-width: 880px) { .grid { grid-template-columns: 1.1fr 0.9fr; gap: 56px; } }
-
-  section { margin-bottom: 30px; }
-  .hint { color: var(--ink-soft); font-size: 0.92rem; margin: 0 0 14px; }
-
-  .tpls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .tpl { position: relative; }
-  .tpl input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
-  .tpl label {
-    display: block; height: 100%; padding: 14px 14px 12px; background: var(--white);
-    border: 2px solid var(--line); border-radius: 10px;
-  }
-  .tpl label b { display: block; font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.1rem; }
-  .tpl label span { color: var(--ink-soft); font-size: 0.88rem; line-height: 1.3; display: block; margin-top: 2px; }
-  .tpl input:checked + label { border-color: var(--kilim); box-shadow: 0 0 0 3px rgba(194,59,34,.18); }
-  .tpl input:focus-visible + label { outline: 3px solid var(--ink); outline-offset: 2px; }
-
-  .slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .slot {
-    position: relative; aspect-ratio: 3/4; background: var(--white); border: 2px dashed var(--line);
-    border-radius: 10px; overflow: hidden; display: grid; place-items: center; text-align: center;
-    color: var(--ink-soft); font-size: 0.9rem; cursor: pointer;
-  }
-  .slot:hover, .slot:focus-within { border-color: var(--ink); }
-  .slot input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-  .slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .slot .rm {
-    position: absolute; top: 6px; right: 6px; z-index: 2; width: 30px; height: 30px; border: 0; border-radius: 50%;
-    background: var(--ink); color: var(--white); font-size: 16px; cursor: pointer; display: none;
-  }
-  .slot.has .rm { display: block; }
-  .slot.has { border-style: solid; border-color: var(--ink); }
-  .slot.has span { display: none; }
-
-  .pw { margin-bottom: 26px; }
-  .pw .row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .pw button { font: inherit; font-weight: 600; padding: 11px 16px; border: 2px solid var(--ink); background: var(--white); border-radius: 8px; cursor: pointer; }
-  .ok { color: #1F7A3E; font-weight: 600; margin: 8px 0 0; }
-  input[type=password] {
-    width: 100%; flex: 1; min-width: 220px; padding: 11px 12px; font: inherit; border: 2px solid var(--line);
-    border-radius: 8px; background: var(--white);
-  }
-
-  @media (max-width: 600px) { button.go { width: 100%; padding: 18px; } .slot { font-size: 0.8rem; } .wrap { padding-top: 14px; } }
-  button.go {
-    font: inherit; font-weight: 600; font-size: 1.05rem; color: var(--white); background: var(--kilim);
-    border: 0; border-radius: 10px; padding: 15px 26px; cursor: pointer; min-width: 220px;
-  }
-  button.go:hover:not(:disabled) { background: var(--kilim-dark); }
-  button.go:disabled { background: #9AA9AE; cursor: not-allowed; }
-  button.go:focus-visible, .rm:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
-
-  .stage {
-    background: var(--ink); color: var(--white); border-radius: 14px; aspect-ratio: 9/16;
-    max-width: 380px; width: 100%; margin: 0 auto; display: grid; place-items: center; overflow: hidden;
-    position: relative;
-  }
-  @media (min-width: 880px) { .stage { position: sticky; top: 20px; } }
-  .stage video { width: 100%; height: 100%; object-fit: cover; }
-  .stage .msg { padding: 28px; text-align: center; }
-  .stage .msg p { margin: 8px 0 0; color: #B8C7CB; font-size: 0.95rem; }
-  .stage .big { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.5rem; font-weight: 800; }
-  .bar { height: 6px; background: #2C434A; border-radius: 3px; margin: 18px auto 0; width: 70%; overflow: hidden; }
-  .bar i { display: block; height: 100%; width: 35%; background: var(--saffron); animation: slide 1.4s ease-in-out infinite; }
-  @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
-  @media (prefers-reduced-motion: reduce) { .bar i { animation: none; width: 60%; } }
-
-  .actions { max-width: 380px; margin: 14px auto 0; display: none; gap: 10px; }
-  .actions.on { display: flex; flex-wrap: wrap; }
-  .actions button { flex: 1; min-width: 140px; font: inherit; font-weight: 600; padding: 12px; border-radius: 10px; cursor: pointer; border: 2px solid var(--ink); background: var(--white); color: var(--ink); }
-  .actions button.main { background: var(--kilim); border-color: var(--kilim); color: var(--white); }
-  .stage img.frame { width: 100%; height: 100%; object-fit: cover; }
-  .actions a {
-    flex: 1; text-align: center; padding: 12px; border-radius: 10px; font-weight: 600; text-decoration: none;
-    background: var(--white); color: var(--ink); border: 2px solid var(--ink); min-width: 140px;
-  }
-  .err { color: var(--kilim-dark); font-weight: 600; margin: 12px 0 0; min-height: 1.4em; }
-  .note { font-size: 0.85rem; color: var(--ink-soft); margin-top: 26px; max-width: 52ch; }
-  .stage.wide { aspect-ratio: 16/9; max-width: 100%; }
-  .stage.wide + .actions, .actions { max-width: 100%; }
-  .stage { position: relative; }
-  .stage .overlay { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 20px 22px; text-align: center; background: linear-gradient(transparent, rgba(0,0,0,.82)); }
-  .stage .overlay p { margin: 6px 0 0; color: #D6E0E3; font-size: .95rem; }
-  .stage .playbtn { position: absolute; inset: 0; margin: auto; width: 96px; height: 96px; border-radius: 50%; border: 0; background: var(--kilim); color: #fff; font-size: 40px; cursor: pointer; display: grid; place-items: center; }
-  .chk { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; font-size: .95rem; }
-  .chk input { width: 22px; height: 22px; margin-top: 2px; }
-  .linkbtn { background: none; border: 0; color: var(--kilim-dark); text-decoration: underline; font: inherit; font-size: .9rem; padding: 8px 0 0; cursor: pointer; }
-  .refrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .refrow button { font: inherit; padding: 8px 12px; border: 2px solid var(--ink); background: var(--white); border-radius: 8px; cursor: pointer; }
-  .bad { color: #9E2D18; font-weight: 600; }
-  .gallery { margin-top: 56px; }
-  .galgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-top: 14px; }
-  .gitem { background: var(--ink); border-radius: 12px; overflow: hidden; color: #D6E0E3; }
-  .gitem video { width: 100%; display: block; max-height: 340px; background: #000; }
-  .gitem .gmeta { padding: 10px 12px 8px; font-size: .85rem; line-height: 1.35; }
-  .gitem .gbtns { display: flex; gap: 8px; padding: 0 12px 12px; }
-  .gitem button { flex: 1; font: inherit; font-weight: 600; padding: 10px; border-radius: 8px; border: 0; cursor: pointer; background: #fff; color: var(--ink); }
-  .gitem button.del { background: #2C434A; color: #fff; }
+:root{--bg:#0B0D12;--bg2:#141821;--bg3:#1C2130;--line:#262C3B;--fg:#F2F4F8;--mut:#9AA3B5;--acc:#FF5A3C;--acc2:#FF8A5B;--ok:#3DD68C;--bad:#FF6B6B;--r:16px;--pt:env(safe-area-inset-top,0px);--pb:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{padding-top:var(--pt);padding-bottom:calc(72px + var(--pb))}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+img,video{display:block;max-width:100%}
+h1,h2,h3{margin:0;letter-spacing:-.01em}
+.hide{display:none!important}
+.page{display:none;padding:14px 16px 24px;max-width:720px;margin:0 auto}
+.page.on{display:block}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0 14px}
+.top h1{font-size:1.5rem;font-weight:800}
+.top .sub{color:var(--mut);font-size:.9rem;margin-top:2px}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.85rem;color:var(--mut)}
+.pill.ok{color:var(--ok);border-color:#1f4a37}
+.pill.bad{color:var(--bad);border-color:#5a2727}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:560px){.grid{grid-template-columns:repeat(3,1fr)}}
+.card{position:relative;border-radius:var(--r);overflow:hidden;background:var(--bg2);aspect-ratio:3/4;border:1px solid var(--line)}
+.card img,.card video{width:100%;height:100%;object-fit:cover}
+.card .ov{position:absolute;inset:auto 0 0 0;padding:28px 12px 12px;background:linear-gradient(transparent,rgba(0,0,0,.85))}
+.card .nm{font-weight:700;font-size:.98rem}
+.card .mt{color:#D6DAE3;font-size:.78rem;margin-top:2px}
+.card .tag{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);border-radius:999px;padding:4px 9px;font-size:.72rem;font-weight:600}
+.card .tag.real{background:rgba(61,214,140,.22);color:#9BF0C6}
+.card .tag.ai{background:rgba(255,138,91,.22);color:#FFC9B0}
+.card.add{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--mut);border-style:dashed;text-align:center;padding:12px}
+.card.add b{color:var(--fg)}
+.card .del{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);border-radius:999px;width:30px;height:30px;font-size:1rem}
+.sec{margin:22px 0 10px;display:flex;align-items:baseline;justify-content:space-between}
+.sec h2{font-size:1.05rem;font-weight:700}
+.sec small{color:var(--mut)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px 18px;border-radius:14px;font-weight:700;font-size:1rem;background:var(--bg3);border:1px solid var(--line);transition:transform .1s}
+.btn:active{transform:scale(.98)}
+.btn.main{background:linear-gradient(135deg,var(--acc),var(--acc2));border:0;color:#fff;box-shadow:0 8px 24px rgba(255,90,60,.3)}
+.btn.main:disabled{opacity:.45;box-shadow:none}
+.btn.ghost{background:transparent}
+.btn.sm{padding:10px 14px;font-size:.9rem;width:auto;border-radius:11px}
+.row{display:flex;gap:10px}
+.row .btn{flex:1}
+.field{margin:14px 0}
+.field label{display:block;color:var(--mut);font-size:.85rem;margin-bottom:6px}
+.input{width:100%;padding:13px 14px;border-radius:12px;background:var(--bg2);border:1px solid var(--line);color:var(--fg);font:inherit}
+.input:focus{outline:0;border-color:var(--acc)}
+.hint{color:var(--mut);font-size:.85rem;margin:8px 0 0}
+.err{color:var(--bad);font-size:.9rem;margin:10px 0 0;white-space:pre-wrap}
+.note{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;color:var(--mut);font-size:.88rem;margin:12px 0}
+.note b{color:var(--fg)}
+/* alt menü */
+nav{position:fixed;left:0;right:0;bottom:0;background:rgba(11,13,18,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;padding:8px 6px calc(8px + var(--pb));z-index:20}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--mut);font-size:.72rem;font-weight:600;padding:6px 0}
+nav button.on{color:var(--fg)}
+nav button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button.on svg{stroke:var(--acc)}
+/* şablon detay */
+.hero{position:relative;border-radius:var(--r);overflow:hidden;background:#000;aspect-ratio:16/9;border:1px solid var(--line)}
+.hero.tall{aspect-ratio:3/4}
+.hero video,.hero img{width:100%;height:100%;object-fit:contain}
+.hero .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25);font-size:3rem;color:#fff}
+.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;margin-top:10px}
+.slot{position:relative;aspect-ratio:1;border-radius:14px;background:var(--bg2);border:1.5px dashed var(--line);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;color:var(--mut);font-size:.8rem;text-align:center;padding:6px;overflow:hidden}
+.slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.slot.has{border-style:solid;border-color:var(--ok)}
+.slot .lbl{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);color:#fff;font-size:.75rem;padding:4px;font-weight:600}
+.slot .x{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border-radius:999px;width:24px;height:24px;color:#fff;font-size:.9rem;line-height:24px}
+.opts{display:flex;gap:8px;flex-wrap:wrap}
+.opt{flex:1;min-width:120px;padding:11px 12px;border-radius:12px;background:var(--bg2);border:1.5px solid var(--line);text-align:left;font-size:.9rem}
+.opt b{display:block}
+.opt small{color:var(--mut)}
+.opt.on{border-color:var(--acc);background:#2a1d1a}
+/* sahne */
+.stage{position:relative;border-radius:var(--r);overflow:hidden;background:#000;border:1px solid var(--line);min-height:220px;display:flex;align-items:center;justify-content:center}
+.stage video,.stage img{width:100%;max-height:70vh;object-fit:contain}
+.msgbox{text-align:center;padding:40px 20px}
+.msgbox .big{font-size:1.15rem;font-weight:700;margin-bottom:6px}
+.msgbox p{color:var(--mut);margin:0;font-size:.9rem}
+.spin{width:38px;height:38px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 14px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:14px}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width 1s linear}
+.actions{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+/* galeri */
+.glist{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:560px){.glist{grid-template-columns:1fr 1fr}}
+.gitem{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.gitem video{width:100%;max-height:360px;background:#000}
+.gitem .gm{padding:10px 12px 6px;font-size:.88rem}
+.gitem .gm small{color:var(--mut);display:block}
+.gitem .gb{display:flex;gap:8px;padding:0 12px 12px}
+/* kişiler */
+.plist{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px}
+.person{position:relative;border-radius:14px;overflow:hidden;background:var(--bg2);border:1.5px solid var(--line);aspect-ratio:1}
+.person img{width:100%;height:100%;object-fit:cover}
+.person .pn{position:absolute;bottom:0;left:0;right:0;padding:18px 8px 6px;background:linear-gradient(transparent,rgba(0,0,0,.85));font-weight:700;font-size:.85rem}
+.person.on{border-color:var(--acc)}
+.person .del{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.65);border-radius:999px;width:26px;height:26px;color:#fff}
+/* alt sayfa (sheet) */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;z-index:30}
+.sheet.on{display:flex}
+.sheet>div{background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:720px;margin:0 auto;padding:16px 16px calc(16px + var(--pb));max-height:88vh;overflow:auto}
+.sheet h3{font-size:1.1rem;margin-bottom:10px}
+.toast{position:fixed;left:50%;bottom:calc(84px + var(--pb));transform:translateX(-50%);background:#fff;color:#111;padding:10px 16px;border-radius:999px;font-weight:600;font-size:.9rem;z-index:40;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1}
+.kv{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.kv span{color:var(--mut)}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="kilim" aria-hidden="true"></div>
-    <h1>Fotoğraflarınız<br>halay çekiyor.</h1>
-    <p class="lead">Fotoğrafları yükle, şablonu seç, 5-10 saniyelik video üret.</p>
-  </header>
 
-  <div class="grid">
-    <main>
-      <div class="pw">
-        <h2>fal.ai anahtarı</h2>
-        <p class="hint">Anahtarı bir kez yapıştır. Yalnızca bu bilgisayarın tarayıcısında saklanır.</p>
-        <div class="row">
-          <input type="password" id="key" placeholder="Anahtarı buraya yapıştır" autocomplete="off" aria-label="fal.ai anahtarı">
-          <button id="saveKey" type="button">Kaydet</button>
-        </div>
-        <p class="ok" id="keyOk" hidden>Anahtar kaydedildi.</p>
-        <button id="copyLink" type="button" class="linkbtn">Anahtarı başka cihaza aktarmak için bağlantı kopyala</button>
-      </div>
+<!-- ŞABLONLAR -->
+<section class="page on" id="p-home">
+  <div class="top"><div><h1>Foto Video</h1><div class="sub">Fotoğrafını yükle, gerçek videoda sen ol.</div></div><span class="pill" id="keyPill">Anahtar yok</span></div>
+  <div class="note" id="homeNote"><b>Nasıl çalışır?</b> Gerçek bir dans videosu seçersin, videodaki kişilerin yerine senin fotoğrafların geçer. Hareket, kamera ve müzik orijinal kalır; sadece insanlar değişir.</div>
+  <div class="sec"><h2>Gerçek videolar</h2><small>En benzer sonuç</small></div>
+  <div class="grid" id="tplReal"></div>
+  <div class="sec"><h2>Yapay sahneler</h2><small>Hareketi yapay zekâ uydurur</small></div>
+  <div class="grid" id="tplAi"></div>
+</section>
 
-      <section>
-        <h2>1. Şablon seç</h2>
-        <div class="tpls" id="tpls"></div>
-      </section>
+<!-- ŞABLON DETAY -->
+<section class="page" id="p-tpl">
+  <div class="top"><button class="btn sm ghost" id="back">‹ Geri</button><span class="pill" id="tplKind"></span></div>
+  <h1 id="tplName" style="font-size:1.35rem;margin-bottom:4px"></h1>
+  <p class="hint" id="tplDesc" style="margin:0 0 12px"></p>
+  <div class="hero" id="hero"></div>
+  <div class="sec"><h2 id="slotTitle">Kişiler</h2><small id="slotHint"></small></div>
+  <div class="slots" id="slots"></div>
+  <div class="sec" id="qualSec"><h2>Kalite</h2></div>
+  <div class="opts" id="qual"></div>
+  <div class="note" id="estimate"></div>
+  <div class="err" id="tplErr"></div>
+  <div class="actions"><button class="btn main" id="go">Videoyu üret</button></div>
+</section>
 
-      <section>
-        <h2>2. Fotoğrafları yükle</h2>
-        <p class="hint">1 ile 3 kişi. Yüzü net, önden çekilmiş, iyi ışıklı fotoğraflar en iyi sonucu verir. Yalnızca izni olan kişilerin fotoğrafını yükle.</p>
-        <div class="slots" id="slots"></div>
-      </section>
+<!-- ÜRETİM / SONUÇ -->
+<section class="page" id="p-run">
+  <div class="top"><button class="btn sm ghost" id="back2">‹ Şablonlar</button><span class="pill" id="runPill"></span></div>
+  <div class="stage" id="stage"></div>
+  <div class="err" id="runErr"></div>
+  <div class="actions" id="runActions"></div>
+</section>
 
-      <section>
-        <h2>3. Biçim ve süre</h2>
-        <div class="tpls">
-          <div class="tpl"><input type="radio" name="ar" id="ar-w" value="16:9" checked><label for="ar-w"><b>Yatay (16:9)</b><span>Televizyon, WhatsApp, YouTube.</span></label></div>
-          <div class="tpl"><input type="radio" name="ar" id="ar-v" value="9:16"><label for="ar-v"><b>Dikey (9:16)</b><span>Instagram, TikTok, telefon.</span></label></div>
-          <div class="tpl"><input type="radio" name="dur" id="d5" value="5" checked><label for="d5"><b>5 saniye</b><span>Daha ucuz.</span></label></div>
-          <div class="tpl"><input type="radio" name="dur" id="d10" value="10"><label for="d10"><b>10 saniye</b><span>İki kat pahalı, daha uzun.</span></label></div>
-          <div class="tpl"><input type="radio" name="dur" id="d15" value="15"><label for="d15"><b>15 saniye</b><span>Yalnızca "En iyi" modelde. Üç kat pahalı.</span></label></div>
-        </div>
-      </section>
+<!-- KİŞİLER -->
+<section class="page" id="p-people">
+  <div class="top"><div><h1>Kişiler</h1><div class="sub">Aile fotoğraflarını bir kez kaydet, her seferinde yükleme.</div></div></div>
+  <div class="note"><b>İyi fotoğraf:</b> yüz net ve önden, gözlüksüz, iyi ışık, tek kişi. Benzerliği en çok bu belirler.</div>
+  <div class="plist" id="plist"></div>
+  <div class="actions"><button class="btn main" id="addPerson">+ Kişi ekle</button></div>
+</section>
 
-      <section>
-        <h2>4. Video modeli ve müzik</h2>
-        <div class="tpls" id="quality">
-          <div class="tpl"><input type="radio" name="m" id="m-mc" value="mc" checked><label for="m-mc"><b>Gerçek hareket, en benzer (önerilen)</b><span>Örnek videodaki gerçek insanların hareketini sizin yüzlerinizle yapar. Önce herkesin yer aldığı bir kare üretilir, benziyorsa videoya çevrilir. Müzik örnek videodan gelir. 10 sn, yaklaşık 1,8 $. 3 fotoğraf gerekir.</span></label></div>
-          <div class="tpl"><input type="radio" name="m" id="m-swap" value="swap"><label for="m-swap"><b>Birebir aynı video</b><span>Örnek videonun kendisi: aynı figürler, aynı müzik, aynı kamera. Sadece 3 kişinin yüzü sizinkiyle değişir. 10 sn, yaklaşık 1,7 $. 3 fotoğraf gerekir.</span></label></div>
-          <div class="tpl"><input type="radio" name="m" id="m-ref" value="ref"><label for="m-ref"><b>Benzer figürler, müzikli</b><span>Yapay zekâ hareketleri taklit eder, birebir olmaz. 8 sn, yaklaşık 2,5 $.</span></label></div>
-          <div class="tpl"><input type="radio" name="m" id="m-seed" value="seed"><label for="m-seed"><b>En iyi, müzikli</b><span>Seedance 2.0. Davul zurna sesi dahil. En çok benzeyen sonuç. Yaklaşık 0,25 $/sn.</span></label></div>
-          <div class="tpl"><input type="radio" name="m" id="m-k26" value="k26"><label for="m-k26"><b>Ekonomik, müzikli</b><span>Kling 2.6. En fazla 10 sn. Yaklaşık 0,15 $/sn.</span></label></div>
-          <div class="tpl"><input type="radio" name="m" id="m-k21" value="k21"><label for="m-k21"><b>Müziksiz, ucuz</b><span>Kling 2.1. Sessiz video. Yaklaşık 0,05 $/sn.</span></label></div>
-        </div>
-        <p class="hint" id="est"></p>
-        <p class="hint">Örnek video hazır gelir. Başka bir örnek video kullanmak istersen buradan seç (3-10 sn, en az 720 piksel yükseklik, en fazla 8 MB):</p>
-        <div class="refrow"><input type="file" id="refFile" accept="video/*" aria-label="Kendi örnek hareket videon"><button id="refClear" type="button" hidden>Seçimi kaldır</button></div>
-        <p class="hint" id="refInfo">Şu an: hazır örnek video kullanılıyor.</p>
-      </section>
+<!-- VİDEOLARIM -->
+<section class="page" id="p-gal">
+  <div class="top"><div><h1>Videolarım</h1><div class="sub" id="galHint">Ürettiğin videolar bu cihazda saklanır.</div></div></div>
+  <div class="glist" id="galGrid"></div>
+  <div class="actions"><button class="btn ghost" id="galClear" hidden>Tüm videoları sil</button></div>
+</section>
 
-      <label class="chk" id="chkWrap"><input type="checkbox" id="checkFirst"><span>Önce kareyi göster, ben onaylayınca videoyu üret. (İşaretlemezsen kare ve video otomatik arka arkaya üretilir.)</span></label>
-      <button class="go" id="go" disabled>Önce kareyi üret</button>
-      <p class="err" id="err" role="alert"></p>
-      <p class="note">İki aşamalı çalışır: önce herkesin yüzünü içeren tek bir kare üretilir (yaklaşık 0,15 $). Benziyorsa videoya çevirirsin (süreye göre değişir, seçince altında tahmini fiyat görünür). Benzemiyorsa videoya para harcamadan yeni kare üretirsin. Fiyatlar fal.ai'a göre değişebilir.</p>
-    </main>
+<!-- AYARLAR -->
+<section class="page" id="p-set">
+  <div class="top"><div><h1>Ayarlar</h1><div class="sub">fal.ai hesabın ve uygulama bilgileri.</div></div></div>
+  <div class="field"><label>fal.ai API anahtarı</label><input class="input" id="key" placeholder="Anahtarı buraya yapıştır" autocomplete="off" spellcheck="false"><p class="hint" id="keyOk"></p></div>
+  <div class="row"><button class="btn" id="testKey">Anahtarı sına</button><button class="btn" id="copyLink">Başka cihaza aktar</button></div>
+  <p class="hint">Anahtar yalnızca bu cihazda saklanır. Bakiye yüklemek için <a href="https://fal.ai/dashboard/billing" target="_blank" rel="noopener" style="color:var(--acc2)">fal.ai/dashboard/billing</a>. Yeni anahtar: <a href="https://fal.ai/dashboard/keys" target="_blank" rel="noopener" style="color:var(--acc2)">fal.ai/dashboard/keys</a>.</p>
+  <div class="sec"><h2>Fiyatlar (fal.ai, yaklaşık)</h2></div>
+  <div class="kv"><span>Gerçek video, 768p</span><b>0,30 $ / sn</b></div>
+  <div class="kv"><span>Gerçek video, 1080p</span><b>0,45 $ / sn</b></div>
+  <div class="kv"><span>Yapay sahne (kare + video)</span><b>0,15 $ + 0,25 $ / sn</b></div>
+  <p class="hint">10 saniyelik halay 768p'de yaklaşık 3 $. Reddedilen isteklerden ücret alınmaz, üretilen her videodan alınır.</p>
+  <div class="sec"><h2>Uygulama</h2></div>
+  <div class="kv"><span>Sürüm</span><b>3.0</b></div>
+  <div class="kv"><span>Ana ekrana ekle</span><b>Safari › Paylaş › Ana Ekrana Ekle</b></div>
+</section>
 
-    <aside>
-      <div class="stage" id="stage" aria-live="polite">
-        <div class="msg"><div class="big">Video burada çıkacak</div><p>Şablonu seç, fotoğrafları ekle.</p></div>
-      </div>
-      <div class="actions" id="actions"></div>
-    </aside>
-  </div>
+<nav>
+  <button data-p="home" class="on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Şablonlar</button>
+  <button data-p="people"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Kişiler</button>
+  <button data-p="gal"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>Videolarım</button>
+  <button data-p="set"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ayarlar</button>
+</nav>
 
-  <section class="gallery" id="gallery">
-    <h2>Son videolarım</h2>
-    <p class="hint" id="galHint">Ürettiğin videolar burada saklanır.</p>
-    <div class="galgrid" id="galGrid"></div>
-    <button id="galClear" type="button" class="linkbtn" hidden>Tüm videoları sil</button>
-  </section>
-</div>
+<!-- Kişi ekleme -->
+<div class="sheet" id="sh-person"><div>
+  <h3>Kişi ekle</h3>
+  <div class="field"><label>Ad</label><input class="input" id="pName" placeholder="Örn. Bahar"></div>
+  <div class="field"><label>Fotoğraf</label><input type="file" id="pFile" accept="image/*" class="input"></div>
+  <div class="hero tall hide" id="pPrev"></div>
+  <div class="err" id="pErr"></div>
+  <div class="row" style="margin-top:12px"><button class="btn" id="pCancel">Vazgeç</button><button class="btn main" id="pSave">Kaydet</button></div>
+</div></div>
+
+<!-- Kişi seç -->
+<div class="sheet" id="sh-pick"><div>
+  <h3 id="pickTitle">Kişi seç</h3>
+  <div class="plist" id="pickList"></div>
+  <div class="row" style="margin-top:12px"><button class="btn" id="pickUpload">Galeriden yükle</button><button class="btn" id="pickCancel">Vazgeç</button></div>
+  <input type="file" id="pickFile" accept="image/*" class="hide">
+</div></div>
+
+<!-- Şablon ekle -->
+<div class="sheet" id="sh-tpl"><div>
+  <h3>Kendi videonu şablon yap</h3>
+  <p class="hint" style="margin-top:0">5-30 saniyelik, kişilerin tamamen göründüğü, kesintisiz bir video seç. Telefondaki Fotoğraflar uygulamasında <b>Düzenle</b> ile kısaltabilirsin.</p>
+  <div class="field"><label>Ad</label><input class="input" id="tName" placeholder="Örn. Zeybek"></div>
+  <div class="field"><label>Video</label><input type="file" id="tFile" accept="video/*" class="input"></div>
+  <div class="field"><label>Videoda kaç kişi var?</label><div class="opts" id="tPeople"></div></div>
+  <p class="hint" id="tInfo"></p>
+  <div class="err" id="tErr"></div>
+  <div class="row" style="margin-top:12px"><button class="btn" id="tCancel">Vazgeç</button><button class="btn main" id="tSave">Kaydet</button></div>
+</div></div>
+
+<!-- Onay -->
+<div class="sheet" id="sh-ok"><div>
+  <h3>Üretim başlasın mı?</h3>
+  <div id="okBody"></div>
+  <div class="row" style="margin-top:14px"><button class="btn" id="okNo">Vazgeç</button><button class="btn main" id="okYes">Başlat</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
 
 <script>
+'use strict';
 const FAL = window.FAL_BASE || 'https://queue.fal.run';
-const FRAME_MODEL = 'fal-ai/nano-banana-pro/edit';
-const VIDEO = {
-  mc:   { model: 'fal-ai/kling-video/v3/pro/motion-control', rate: 0.168, max: 10, audio: true, fixed: 10, wide: true },
-  swap: { model: 'fal-ai/kling-video/o1/video-to-video/edit', rate: 0.168, max: 10, audio: true, fixed: 10, noFrame: true },
-  ref:  { model: 'bytedance/seedance-2.0/fast/reference-to-video', rate: 0.29, max: 8, audio: true, fixed: 8 },
-  seed: { model: 'bytedance/seedance-2.0/fast/image-to-video', rate: 0.25, max: 15, audio: true },
-  k26:  { model: 'fal-ai/kling-video/v2.6/pro/image-to-video', rate: 0.15, max: 10, audio: true },
-  k21:  { model: 'fal-ai/kling-video/v2.1/standard/image-to-video', rate: 0.05, max: 10, audio: false },
-};
-const LOOK = 'Keep every face, hairstyle, skin tone and age exactly identical to the reference photos so each person is instantly recognizable.';
-const MOTION_END = ' Keep all faces exactly as in the photo, stable and undistorted, natural realistic motion, handheld smartphone video.';
+const FAL_REST = window.FAL_REST || 'https://rest.alpha.fal.ai';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms || window.POLL_MS || 4000));
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-// scene = ilk kare (resim), motion = videodaki hareket
-const TEMPLATES = [
-  { id: 'studyo', name: 'Stüdyo halayı', desc: 'Televizyon stüdyosunda, mendilli ve davullu halay.',
-    scene: 'a Turkish TV studio set with a warm wooden floor, glowing blue ornamental geometric panels, golden star lamps and a few people sitting in the background, a large davul drum partially visible in the left foreground; they stand shoulder to shoulder in a row dancing halay, the first person holds a white handkerchief (mendil) in a raised hand and kicks one leg up, the others hold each other by the shoulders and kick in sync, everyone laughing',
-    motion: 'The three people dance a lively Turkish halay in a TV studio, shoulder to shoulder, kicking and stomping in sync. The first person waves a white handkerchief in the air and kicks his leg up high, the others copy the steps, laughing. A large davul drum swings slightly in the foreground. The camera moves slowly and smoothly sideways with a slight handheld feel.',
-    audio: 'Audio: energetic Turkish halay music with a loud davul drum and zurna, rhythmic clapping and cheering crowd, no speech.' },
-  { id: 'halay', name: 'Halay', desc: 'Omuz omuza, el ele halay çekiyorlar.',
-    scene: 'standing side by side holding hands in a cozy Turkish living room, a large davul drum visible in the corner, warm lighting, smiling and laughing, mid-halay pose',
-    motion: 'The people dance a lively Turkish halay, holding hands, synchronized kicking steps and swaying, laughing.',
-    audio: 'Audio: energetic Turkish halay music with a loud davul drum and zurna, rhythmic clapping, joyful laughter, no speech.' },
-  { id: 'dugun', name: 'Düğün pisti', desc: 'Davul zurna eşliğinde düğün eğlencesi.',
+// ---------- MODELLER ----------
+const M = {
+  recast: { id: 'minimax/h3-max/recast', rate: { '768P': 0.30, '1080P': 0.45 } },
+  frame: { id: 'fal-ai/nano-banana-pro/edit', cost: 0.15 },
+  ai: { id: 'bytedance/seedance-2.0/fast/image-to-video', rate: 0.25 },
+};
+const LOOK = 'Keep every face, hairstyle, skin tone, age and body build exactly identical to the reference photos so each person is instantly recognizable.';
+
+// Hazır şablonlar. kind: real = gerçek video (recast), ai = yapay sahne.
+const BUILTIN = [
+  { id: 'halay', kind: 'real', name: 'Stüdyo halayı', desc: 'TV stüdyosunda mendilli, davullu halay. 3 kişi, 10 sn.', people: 3, dur: 10, video: 'referans-halay-720.mp4', wide: true },
+  { id: 'dugun', kind: 'ai', name: 'Düğün pisti', desc: 'Davul zurna eşliğinde düğün eğlencesi.', people: 3, dur: 10,
     scene: 'dancing joyfully at a Turkish wedding hall with festive decorations and cheering guests in the background, arms raised, smiling',
-    motion: 'The people clap above their heads and dance joyfully at a wedding, guests cheering in the background.',
-    audio: 'Audio: lively Turkish wedding music with davul and zurna, clapping and cheering guests, no speech.' },
-  { id: 'dans', name: 'Trend dans', desc: 'Kameraya bakıp eğlenceli bir dans yapıyorlar.',
+    motion: 'The people clap above their heads and dance joyfully at a wedding, guests cheering in the background. Audio: lively Turkish wedding music with davul and zurna, clapping and cheering guests, no speech.' },
+  { id: 'dans', kind: 'ai', name: 'Trend dans', desc: 'Kameraya bakıp eğlenceli bir dans yapıyorlar.', people: 3, dur: 10,
     scene: 'standing close together facing the camera in a bright room, playful expressions, mid-dance pose',
-    motion: 'The people perform a fun viral dance routine in perfect sync, facing the camera, playful and energetic.',
-    audio: 'Audio: upbeat catchy dance music with a strong beat, no speech.' },
-  { id: 'sarilma', name: 'Sarılma', desc: 'Birbirlerine sarılıp gülüyorlar.',
+    motion: 'The people perform a fun viral dance routine in perfect sync, facing the camera, playful and energetic. Audio: upbeat catchy dance music with a strong beat, no speech.' },
+  { id: 'sarilma', kind: 'ai', name: 'Sarılma', desc: 'Birbirlerine sarılıp gülüyorlar.', people: 3, dur: 5,
     scene: 'hugging each other warmly and laughing, looking at the camera, cozy home setting',
-    motion: 'The people hug each other warmly, laugh together and look at the camera with happy smiles.',
-    audio: 'Audio: soft warm emotional piano music, gentle ambience, no speech.' },
+    motion: 'The people hug each other warmly, laugh together and look at the camera with happy smiles. Audio: soft warm emotional piano music, gentle ambience, no speech.' },
 ];
 
-const $ = (s) => document.querySelector(s);
-const photos = [null, null, null];
-let tplId = TEMPLATES[0].id, frameUrl = null;
-const sleep = () => new Promise((r) => setTimeout(r, window.POLL_MS || 4000));
-
-const keyInput = $('#key');
-function readStoredKey() {
-  let k = '';
-  try { k = localStorage.getItem('falKey') || ''; } catch (e) {}
-  if (!k) { const m = document.cookie.match(/(?:^|; )falKey=([^;]*)/); if (m) k = decodeURIComponent(m[1]); }
-  return cleanKey(k);
+// ---------- DEPO (IndexedDB) ----------
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('fotovideo', 3);
+    r.onupgradeneeded = () => { const db = r.result; ['videos', 'people', 'templates'].forEach((s) => { if (!db.objectStoreNames.contains(s)) db.createObjectStore(s, { keyPath: 'id' }); }); };
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
 }
+async function tx(store, mode, fn) {
+  const db = await idb();
+  return new Promise((res, rej) => { const t = db.transaction(store, mode); let q; try { q = fn(t.objectStore(store)); } catch (e) { rej(e); return; } t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); });
+}
+const dbAll = (s) => tx(s, 'readonly', (o) => o.getAll()).catch(() => []);
+const dbPut = (s, v) => tx(s, 'readwrite', (o) => o.put(v));
+const dbDel = (s, id) => tx(s, 'readwrite', (o) => o.delete(id));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const objUrls = [];
+const blobUrl = (b) => { const u = URL.createObjectURL(b); objUrls.push(u); return u; };
+
+// ---------- ANAHTAR ----------
+const keyInput = $('#key');
+const cleanKey = (v) => (v || '').replace(/^\s*(FAL_KEY\s*=|Key\s+)/i, '').replace(/["'\s]/g, '');
+function readStoredKey() { let k = ''; try { k = localStorage.getItem('falKey') || ''; } catch (e) {} if (!k) { const m = document.cookie.match(/(?:^|; )falKey=([^;]*)/); if (m) k = decodeURIComponent(m[1]); } return cleanKey(k); }
 function storeKey(k) {
   try { localStorage.setItem('falKey', k); } catch (e) {}
   try { document.cookie = 'falKey=' + encodeURIComponent(k) + '; max-age=31536000; path=' + location.pathname.replace(/[^/]*$/, '') + '; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : ''); } catch (e) {}
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  syncKeyPill();
 }
-function keyStatus(text, color) { const ok = $('#keyOk'); ok.hidden = false; ok.textContent = text; ok.style.color = color || '#1F7A3E'; }
-// Bağlantıyla aktarım: ...#k=ANAHTAR açılırsa anahtar bu cihaza kaydedilir ve adresten silinir.
+function getKey() { const k = cleanKey(keyInput.value) || readStoredKey(); if (k && k !== readStoredKey()) storeKey(k); if (!k) throw new Error('Önce Ayarlar bölümüne fal.ai anahtarını yapıştır.'); return k; }
+function syncKeyPill() { const has = !!readStoredKey(); const p = $('#keyPill'); p.textContent = has ? 'Anahtar kayıtlı' : 'Anahtar yok'; p.className = 'pill ' + (has ? 'ok' : 'bad'); }
+function keyStatus(t, color) { const o = $('#keyOk'); o.textContent = t; o.style.color = color || 'var(--ok)'; }
 (function importFromHash() {
-  const m = location.hash.match(/^#k=(.+)$/);
-  if (!m) return;
+  const m = location.hash.match(/^#k=(.+)$/); if (!m) return;
   const k = cleanKey(decodeURIComponent(m[1]));
   if (k.length >= 20) { storeKey(k); history.replaceState(null, '', location.pathname + location.search); window.__importedKey = true; }
 })();
 keyInput.value = readStoredKey();
-if (keyInput.value) keyStatus(window.__importedKey ? 'Anahtar bağlantıdan alındı ve bu cihaza kaydedildi.' : 'Anahtar bu cihazda kayıtlı.');
-// Yapıştırır yapıştırmaz kendiliğinden kaydet: "Kaydet"e basmayı unutsan da anahtar kaybolmaz.
-keyInput.addEventListener('input', () => { const k = cleanKey(keyInput.value); if (k.length >= 20) { storeKey(k); keyStatus('Anahtar bu cihazda kayıtlı.'); } });
+if (keyInput.value) keyStatus(window.__importedKey ? 'Anahtar bağlantıdan alındı ve kaydedildi.' : 'Anahtar bu cihazda kayıtlı.');
+keyInput.addEventListener('input', () => { const k = cleanKey(keyInput.value); if (k.length >= 20) { storeKey(k); keyStatus('Anahtar kaydedildi.'); } });
+$('#testKey').addEventListener('click', async () => {
+  const k = cleanKey(keyInput.value) || readStoredKey(); if (!k) { keyStatus('Önce anahtarı yapıştır.', 'var(--bad)'); return; }
+  keyStatus('Sınanıyor...', 'var(--mut)');
+  try { const r = await fetch(`${FAL_REST}/storage/upload/initiate?storage_type=fal-cdn-v3`, { method: 'POST', headers: { Authorization: `Key ${k}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ content_type: 'text/plain', file_name: 'test.txt' }) });
+    if (r.ok) { storeKey(k); keyStatus('Anahtar geçerli.'); } else keyStatus(r.status === 401 || r.status === 403 ? 'Anahtar geçersiz. fal.ai\'da yeni anahtar oluştur.' : 'fal.ai cevap vermedi (' + r.status + ').', 'var(--bad)'); }
+  catch (e) { keyStatus('Bağlantı kurulamadı, interneti kontrol et.', 'var(--bad)'); }
+});
 $('#copyLink').addEventListener('click', async () => {
-  const k = cleanKey(keyInput.value) || readStoredKey();
-  if (!k) { keyStatus('Önce anahtarı yapıştır.', '#9E2D18'); return; }
+  const k = cleanKey(keyInput.value) || readStoredKey(); if (!k) { keyStatus('Önce anahtarı yapıştır.', 'var(--bad)'); return; }
   const link = location.origin + location.pathname + '#k=' + encodeURIComponent(k);
-  try { await navigator.clipboard.writeText(link); keyStatus('Bağlantı kopyalandı. Bunu yalnızca kendine gönder (örn. kendi WhatsApp sohbetine). İçinde anahtarın var, kimseyle paylaşma.'); }
-  catch (e) { window.prompt('Bu bağlantıyı kopyala ve yalnızca kendine gönder:', link); }
+  try { if (navigator.share) { await navigator.share({ title: 'Foto Video anahtarı', text: 'Bu bağlantıyı diğer telefonda aç, anahtar kendiliğinden kaydolur.', url: link }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(link); toast('Bağlantı kopyalandı. Diğer cihazda aç.'); } catch (e) { prompt('Bu bağlantıyı diğer cihazda aç:', link); }
 });
-$('#saveKey').addEventListener('click', async () => {
-  const k = cleanKey(keyInput.value);
-  const ok = $('#keyOk');
-  ok.hidden = false; ok.style.color = '';
-  if (!k) { ok.textContent = 'Anahtar kutusu boş.'; ok.style.color = '#9E2D18'; return; }
-  keyInput.value = k; storeKey(k);
-  ok.textContent = 'Anahtar sınanıyor...';
-  try {
-    const base = window.FAL_REST || 'https://rest.alpha.fal.ai';
-    const r = await fetch(`${base}/storage/upload/initiate?storage_type=fal-cdn-v3`, { method: 'POST', headers: { Authorization: `Key ${k}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ content_type: 'image/jpeg', file_name: 'sina.jpg' }) });
-    if (r.ok) { ok.textContent = 'Anahtar kaydedildi ve geçerli.'; ok.style.color = '#1F7A3E'; }
-    else if (r.status === 401 || r.status === 403) { ok.textContent = 'Anahtar geçersiz. fal.ai > Settings > API Keys sayfasında yeni bir anahtar oluşturup tamamını yapıştır.'; ok.style.color = '#9E2D18'; }
-    else { ok.textContent = 'Anahtar kaydedildi (sınanamadı, kod ' + r.status + ').'; }
-  } catch (e) { ok.textContent = 'Anahtar kaydedildi (sınanamadı, bağlantı hatası).'; }
-});
+syncKeyPill();
 
-$('#tpls').innerHTML = TEMPLATES.map((t, i) => `
-  <div class="tpl">
-    <input type="radio" name="tpl" id="t-${t.id}" value="${t.id}" ${i === 0 ? 'checked' : ''}>
-    <label for="t-${t.id}"><b>${t.name}</b><span>${t.desc}</span></label>
-  </div>`).join('');
-document.querySelectorAll('input[name=tpl]').forEach((r) => r.addEventListener('change', () => { tplId = r.value; }));
+// ---------- YARDIMCILAR ----------
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2600); }
+function show(p) { $$('.page').forEach((x) => x.classList.toggle('on', x.id === 'p-' + p)); $$('nav button').forEach((b) => b.classList.toggle('on', b.dataset.p === p)); window.scrollTo(0, 0); }
+$$('nav button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+function sheet(id, on) { $('#' + id).classList.toggle('on', on); }
+$$('.sheet').forEach((s) => s.addEventListener('click', (e) => { if (e.target === s) s.classList.remove('on'); }));
 
-function renderSlots() {
-  $('#slots').innerHTML = photos.map((p, i) => `
-    <div class="slot ${p ? 'has' : ''}">
-      <span>${i + 1}. kişi<br>Fotoğraf ekle</span>
-      ${p ? `<img src="${p}" alt="${i + 1}. kişinin fotoğrafı">` : ''}
-      <input type="file" accept="image/*" data-i="${i}" aria-label="${i + 1}. kişi fotoğrafı">
-      <button class="rm" data-rm="${i}" aria-label="${i + 1}. fotoğrafı kaldır">×</button>
-    </div>`).join('');
-  document.querySelectorAll('.slot input').forEach((el) => el.addEventListener('change', onFile));
-  document.querySelectorAll('.rm').forEach((b) => b.addEventListener('click', (e) => {
-    e.preventDefault(); photos[+b.dataset.rm] = null; renderSlots();
-  }));
-  $('#go').disabled = !photos.some(Boolean);
-}
-
-function shrink(file) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      const max = 1280, k = Math.min(1, max / Math.max(img.width, img.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(url);
-      resolve(c.toDataURL('image/jpeg', 0.92));
-    };
-    img.onerror = () => reject(new Error('Fotoğraf okunamadı.'));
-    img.src = url;
-  });
-}
-async function onFile(e) {
-  const f = e.target.files[0]; if (!f) return;
-  try { photos[+e.target.dataset.i] = await shrink(f); renderSlots(); }
-  catch (err) { $('#err').textContent = err.message; }
-}
-
-let busyFrame = null;
-function focusStage() { const el = $('#stage'); if (el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-function stageMsg(big, small, loading) {
-  const bar = loading ? '<div class="bar"><i></i></div>' : '';
-  if (busyFrame) $('#stage').innerHTML = `<img class="frame" src="${busyFrame}" alt="Üretilen kare"><div class="overlay"><div class="big">${big}</div><p>${small || ''}</p>${bar}</div>`;
-  else $('#stage').innerHTML = `<div class="msg"><div class="big">${big}</div><p>${small || ''}</p>${bar}</div>`;
-}
-function setActions(html) { $('#actions').innerHTML = html; $('#actions').classList.toggle('on', !!html); }
 function trErr(m) {
-  if (/duration exceeds|Maximum is 10/i.test(m)) return 'Örnek video çok uzun: en fazla 10 saniye olmalı. iPhone\'da Fotoğraflar > videoyu aç > Düzenle > uçlardaki tutamaçları sürükleyerek 10 saniyeye kısalt, ya da "Seçimi kaldır" diyerek hazır videoyu kullan.';
-  if (/duration.*(minimum|less|short)|Minimum is 3/i.test(m)) return 'Örnek video çok kısa: en az 3 saniye olmalı.';
-  if (/(width|height|resolution).*(minimum|below|at least|small)|Minimum (width|height)/i.test(m)) return 'Örnek videonun çözünürlüğü düşük: genişlik ve yükseklik en az 720 piksel olmalı. "Seçimi kaldır" diyerek hazır videoyu kullan.';
-  if (/Authentication is required|Cannot access application|Invalid Key|Unauthorized/i.test(m)) return 'fal.ai anahtarı geçersiz ya da eksik. Anahtarı yukarıya yeniden yapıştırıp Kaydet\'e bas; kırmızı çıkarsa fal.ai\'da yeni anahtar oluştur.';
-  if (/face/i.test(m)) return 'Fotoğraflardan birinde net bir yüz bulunamadı. Daha net, önden çekilmiş bir fotoğraf dene.';
+  m = String(m || '');
+  if (/Exhausted balance|User is locked|insufficient (credit|balance)/i.test(m)) return 'fal.ai bakiyen bitti. fal.ai/dashboard/billing adresinden bakiye yükle, birkaç dakika sonra tekrar dene.';
+  if (/Too many subjects|no more than 1/i.test(m)) return 'Bu model videoda yalnızca 1 kişi kabul ediyor. Tek kişilik bir şablon seç ya da videoyu değiştir.';
+  if (/duration.*(exceed|maximum|longer)|too long/i.test(m)) return 'Video çok uzun. 5-30 saniye arası olmalı; telefondaki Fotoğraflar uygulamasında Düzenle ile kısalt.';
+  if (/duration.*(minimum|short)|too short/i.test(m)) return 'Video çok kısa: en az 5 saniye olmalı.';
+  if (/shot.*(longer|exceed)|single shot/i.test(m)) return 'Videoda 15 saniyeden uzun kesintisiz bir sahne var. Daha kısa bir parça seç.';
+  if (/(width|height|resolution).*(minimum|small|at least)/i.test(m)) return 'Video çözünürlüğü düşük: en az 720p olmalı.';
+  if (/Authentication|Cannot access application|Invalid Key|Unauthorized|Forbidden/i.test(m)) return 'fal.ai anahtarı geçersiz ya da eksik. Ayarlar\'dan anahtarı yeniden yapıştır ve "Anahtarı sına"ya bas.';
+  if (/no (human |)face|face.*not (found|detected)/i.test(m)) return 'Fotoğraflardan birinde net bir yüz bulunamadı. Daha net, önden çekilmiş bir fotoğraf kullan.';
+  if (/content (policy|moderation)|safety|nsfw|flagged/i.test(m)) return 'İçerik denetimi isteği reddetti. Başka bir fotoğraf ya da video dene.';
+  if (/rate limit|too many requests/i.test(m)) return 'Çok sık istek gönderildi. Bir dakika bekleyip tekrar dene.';
+  if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'İnternet bağlantısı koptu. Bağlantıyı kontrol edip tekrar dene.';
   return m;
 }
 function falError(d, status) {
   const x = d && (d.detail || d.error || d.message);
   if (typeof x === 'string') return trErr(x);
-  if (Array.isArray(x) && x[0]) return x.slice(0, 3).map((e) => trErr((e.loc ? e.loc.filter((p) => p !== 'body').join('.') + ': ' : '') + (e.msg || JSON.stringify(e)))).join(' | ');
-  if (status === 401 || status === 403) return 'fal.ai anahtarı geçersiz ya da bakiye yok.';
-  if (status === 422) return 'Girdi geçersiz (422). Fotoğraflarda net bir yüz olmayabilir ya da video koşulları uymuyor.';
+  if (Array.isArray(x) && x[0]) return x.slice(0, 3).map((e) => trErr((e.msg || JSON.stringify(e)))).join(' | ');
+  if (status === 401 || status === 403) return trErr('Unauthorized');
+  if (status === 422) return 'Girdi geçersiz (422). Fotoğraflar ya da video modelin şartlarına uymuyor.';
   return `Video servisi hata verdi (${status}).`;
 }
-function cleanKey(v) { return (v || '').replace(/^\s*(FAL_KEY\s*=|Key\s+)/i, '').replace(/["'\s]/g, ''); }
-function getKey() {
-  const key = cleanKey(keyInput.value) || readStoredKey();
-  if (key && key !== readStoredKey()) storeKey(key);
-  if (!key) throw new Error('Önce yukarıya fal.ai anahtarını yapıştırıp Kaydet\'e bas.');
-  return key;
+
+async function uploadToFal(blob, name) {
+  const key = getKey();
+  const init = await fetch(`${FAL_REST}/storage/upload/initiate?storage_type=fal-cdn-v3`, { method: 'POST', headers: { Authorization: `Key ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ content_type: blob.type || 'application/octet-stream', file_name: name }) });
+  if (!init.ok) { const d = await init.json().catch(() => ({})); throw new Error(falError(d, init.status)); }
+  const { upload_url, file_url } = await init.json();
+  const put = await fetch(upload_url, { method: 'PUT', headers: { 'Content-Type': blob.type || 'application/octet-stream' }, body: blob });
+  if (!put.ok) throw new Error('Dosya yüklenemedi (' + put.status + ').');
+  return file_url;
+}
+const toDataUrl = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Dosya okunamadı.')); r.readAsDataURL(blob); });
+async function dataUrlToBlob(u) { return (await fetch(u)).blob(); }
+// Fotoğrafı 1280px'e küçültüp JPEG yapar.
+function shrinkImage(file, max = 1280) {
+  return new Promise((res, rej) => {
+    const img = new Image(); const u = URL.createObjectURL(file);
+    img.onload = () => { const s = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); c.toBlob((b) => b ? res(b) : rej(new Error('Fotoğraf işlenemedi.')), 'image/jpeg', 0.9); };
+    img.onerror = () => rej(new Error('Fotoğraf açılamadı. JPG ya da PNG seç.')); img.src = u;
+  });
+}
+// Videonun süresini, boyutunu ve bir kare görüntüsünü alır.
+function probeVideo(blob) {
+  return new Promise((res, rej) => {
+    const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto';
+    const u = URL.createObjectURL(blob); const t = setTimeout(() => rej(new Error('Video okunamadı.')), window.PROBE_MS || 15000);
+    v.onloadedmetadata = () => { try { v.currentTime = Math.min(1, (v.duration || 1) / 2); } catch (e) {} };
+    v.onseeked = () => { try { const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob((p) => { clearTimeout(t); URL.revokeObjectURL(u); res({ dur: v.duration, w: v.videoWidth, h: v.videoHeight, poster: p }); }, 'image/jpeg', 0.85); } catch (e) { clearTimeout(t); res({ dur: v.duration, w: v.videoWidth, h: v.videoHeight, poster: null }); } };
+    v.onerror = () => { clearTimeout(t); rej(new Error('Video açılamadı. MP4 ya da MOV seç.')); };
+    v.src = u; v.load();
+  });
 }
 
-// Bir fal.ai işini gönderir, bitene kadar bekler, sonuç JSON'unu döndürür.
-// Devam eden video işleri kaydedilir: ekran kapanıp sayfa yeniden açılsa da iş kaldığı yerden sürer.
+// ---------- fal.ai KUYRUK + KALICI İŞLER ----------
 const PEND = 'falPending';
 const getPend = () => { try { return JSON.parse(localStorage.getItem(PEND) || '[]'); } catch (e) { return []; } };
 const setPend = (a) => { try { localStorage.setItem(PEND, JSON.stringify(a)); } catch (e) {} };
 const addPend = (p) => setPend(getPend().filter((x) => x.id !== p.id).concat(p));
 const delPend = (id) => { if (id) setPend(getPend().filter((x) => x.id !== id)); };
 const activeJobs = new Set();
+let progressFn = null;
 
-// Bir fal.ai işini bitene kadar bekler. Ağ kesilirse (ekran kilitlenince olur) vazgeçmez, tekrar dener.
-async function pollJob(statusUrl, responseUrl, label, id) {
-  const headers = { Authorization: `Key ${getKey()}`, 'Content-Type': 'application/json' };
+async function pollJob(statusUrl, responseUrl, id) {
+  const headers = { Authorization: `Key ${getKey()}` };
   const t0 = Date.now();
   const fail = (m) => { delPend(id); activeJobs.delete(id); return Object.assign(new Error(m), { final: true }); };
   for (;;) {
     await sleep();
     let st = null;
-    try {
-      const s = await fetch(statusUrl, { headers });
-      st = await s.json().catch(() => ({}));
-      if (!s.ok) throw fail(falError(st, s.status));
-    } catch (e) { if (e.final) throw e; st = null; }
+    try { const s = await fetch(statusUrl, { headers }); st = await s.json().catch(() => ({})); if (!s.ok) throw fail(falError(st, s.status)); }
+    catch (e) { if (e.final) throw e; st = null; }
     if (st && st.status === 'COMPLETED') {
       let o = null;
       for (let k = 0; k < 6 && !o; k++) { try { o = await fetch(responseUrl, { headers }); } catch (e) { await sleep(); } }
       if (!o) continue;
       const out = await o.json().catch(() => ({}));
-      if (!o.ok) { const fe = falError(out, o.status); throw fail(/video|örnek|yüz/i.test(fe) ? fe : fe + ' (Fotoğraf uygun olmayabilir, başka bir fotoğrafla dene.)'); }
-      delPend(id); activeJobs.delete(id);
-      return out;
+      if (!o.ok) throw fail(falError(out, o.status));
+      delPend(id); activeJobs.delete(id); return out;
     }
-    if (label) {
-      const sec = Math.round((Date.now() - t0) / 1000);
-      stageMsg(label, `${sec} sn geçti. Ekran kapanırsa sorun değil, video hazır olunca "Son videolarım"a eklenir.`, true);
-      if (sec > 900) { activeJobs.delete(id); throw new Error('Çok uzun sürdü. Birkaç dakika sonra sayfayı yenile, video hazırsa "Son videolarım"a eklenir.'); }
-    }
+    const sec = Math.round((Date.now() - t0) / 1000);
+    if (progressFn) progressFn(sec, st && st.queue_position);
+    if (sec > 1200) { activeJobs.delete(id); throw new Error('Çok uzun sürdü. Birkaç dakika sonra uygulamayı yeniden aç; video hazırsa "Videolarım"a eklenir.'); }
   }
 }
-
-async function falRun(model, input, label, opts = {}) {
+async function falRun(model, input, keep) {
   const headers = { Authorization: `Key ${getKey()}`, 'Content-Type': 'application/json' };
   const r = await fetch(`${FAL}/${model}`, { method: 'POST', headers, body: JSON.stringify(input) });
   const d = await r.json().catch(() => ({}));
   if (!r.ok || !d.request_id) throw new Error(falError(d, r.status));
-  const id = opts.video ? d.request_id : null;
-  if (id) { addPend({ id, statusUrl: d.status_url, responseUrl: d.response_url, label: opts.video, created: Date.now() }); activeJobs.add(id); }
-  return pollJob(d.status_url, d.response_url, label, id);
+  const id = keep ? d.request_id : null;
+  if (id) { addPend({ id, statusUrl: d.status_url, responseUrl: d.response_url, label: keep, created: Date.now() }); activeJobs.add(id); }
+  return pollJob(d.status_url, d.response_url, id);
 }
-
-// Sayfa yeniden açılınca ya da ekran geri gelince bekleyen videoları sürdür.
 async function resumePending() {
-  const list = getPend().filter((p) => Date.now() - p.created < 2 * 3600 * 1000);
-  setPend(list);
+  const list = getPend().filter((p) => Date.now() - p.created < 3 * 3600 * 1000); setPend(list);
   for (const p of list) {
-    if (activeJobs.has(p.id)) continue;
-    activeJobs.add(p.id);
+    if (activeJobs.has(p.id)) continue; activeJobs.add(p.id);
     (async () => {
       try {
-        stageMsg('Önceki video hazırlanıyor', 'Sayfa yeniden açıldığı için kaldığı yerden devam ediyor.', true);
-        const out = await pollJob(p.statusUrl, p.responseUrl, null, p.id);
-        const v = out.video && out.video.url;
-        if (v) { await galAdd(v, p.label); showVideo(v); }
-      } catch (e) { if (e.final) $('#err').textContent = e.message; stageMsg('Önceki video alınamadı', e.message || ''); }
+        show('run'); stageWait('Önceki video hazırlanıyor', 'Uygulama kapanmıştı, kaldığı yerden sürüyor.');
+        const out = await pollJob(p.statusUrl, p.responseUrl, p.id);
+        const v = out.video && out.video.url; if (v) { await galAdd(v, p.label); showVideo(v, p.label); }
+      } catch (e) { stageFail(e.message, null); }
       finally { activeJobs.delete(p.id); }
     })();
   }
 }
 
-// Örnek videodan bir kare alır: yapay zekâ, sahneyi ve duruşları bu kareye göre kurar.
-const refFrameCache = {};
-async function getRefFrame() {
-  if (window.__refFrame) return window.__refFrame;
-  const f = $('#refFile').files[0], key = f ? f.name + f.size : 'default';
-  if (refFrameCache[key]) return refFrameCache[key];
-  let blob = f;
-  if (!blob) { const r = await fetch('referans-halay-720.mp4'); if (!r.ok) throw new Error('Örnek video bulunamadı.'); blob = await r.blob(); }
-  const frame = await new Promise((res, rej) => {
-    const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto';
-    const u = URL.createObjectURL(blob);
-    const t = setTimeout(() => rej(new Error('Kare alınamadı.')), window.REF_FRAME_TIMEOUT || 8000);
-    v.onloadeddata = () => { try { v.currentTime = Math.min(0.5, (v.duration || 1) / 2); } catch (e) { rej(e); } };
-    v.onseeked = () => {
-      try {
-        const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
-        c.getContext('2d').drawImage(v, 0, 0);
-        c.toBlob((b) => { clearTimeout(t); URL.revokeObjectURL(u); b ? res(b) : rej(new Error('Kare alınamadı.')); }, 'image/jpeg', 0.9);
-      } catch (e) { rej(e); }
-    };
-    v.onerror = () => rej(new Error('Kare alınamadı.'));
-    v.src = u; v.load();
-  });
-  return (refFrameCache[key] = (await uploadToFal(frame, 'hedef-kare.jpg')) || (await toDataUrl(frame)));
-}
-
-async function makeFrame() {
-  const imgs = photos.filter(Boolean), n = imgs.length;
-  if (document.querySelector('input[name=m]:checked').value === 'mc') {
-    if (n !== 3) throw new Error('Bu seçenek için 3 kişinin fotoğrafı gerekir. Örnek videodaki üç kişinin yerine sizinkiler geçecek.');
-    let guide = null; try { guide = await getRefFrame(); } catch (e) {}
-    const tpl0 = TEMPLATES[0];
-    const prompt = guide
-      ? `Image 4 is the TARGET SCENE. Recreate image 4 as one photorealistic photo with exactly the same composition, camera angle, background, floor, lighting, clothing and body poses, but replace the three people in image 4 with the people from images 1, 2 and 3: the person from image 1 stands where the leftmost person is (holding the white handkerchief), image 2 in the middle, image 3 on the right. Each person's face, hairstyle, skin tone, age and body build must match their own photo exactly, sharp and instantly recognizable. Do not add or remove people. ${LOOK}`
-      : `Create one photorealistic photo of the 3 different people from the 3 reference photos (one person per photo, in the same order), ${tpl0.scene}. Medium-wide shot, everyone fully in frame from head to knees, faces sharp and clearly visible. ${LOOK}`;
-    const out = await falRun(FRAME_MODEL, { prompt, image_urls: guide ? imgs.concat(guide) : imgs, num_images: 1, aspect_ratio: '16:9', output_format: 'jpeg' }, 'Kare hazırlanıyor');
-    const url = out.images && out.images[0] && out.images[0].url;
-    if (!url) throw new Error('Kare üretilemedi, başka fotoğraflarla dene.');
-    return url;
+// ---------- ŞABLONLAR ----------
+let userTpls = [];
+async function loadTpls() { userTpls = await dbAll('templates'); renderTpls(); }
+function allTpls() { return BUILTIN.concat(userTpls); }
+function renderTpls() {
+  const real = $('#tplReal'), ai = $('#tplAi'); real.innerHTML = ''; ai.innerHTML = '';
+  for (const t of allTpls()) {
+    const d = document.createElement('div'); d.className = 'card';
+    const poster = t.posterBlob ? blobUrl(t.posterBlob) : (t.poster || '');
+    d.innerHTML = `<img src="${esc(poster)}" alt="" onerror="this.style.display='none'"><span class="tag ${t.kind}">${t.kind === 'real' ? 'Gerçek video' : 'Yapay sahne'}</span><div class="ov"><div class="nm">${esc(t.name)}</div><div class="mt">${t.people} kişi · ${t.dur} sn</div></div>` + (t.builtin === false ? '<button class="del" aria-label="Sil">✕</button>' : '');
+    d.addEventListener('click', (e) => { if (e.target.classList.contains('del')) return; openTpl(t.id); });
+    const del = $('.del', d); if (del) del.addEventListener('click', async () => { if (!confirm(`"${t.name}" şablonu silinsin mi?`)) return; await dbDel('templates', t.id); loadTpls(); });
+    (t.kind === 'real' ? real : ai).appendChild(d);
+    if (!poster && t.video) lazyPoster(t, $('img', d));
   }
-  const tpl = TEMPLATES.find((t) => t.id === tplId);
-  const who = n === 1 ? 'the person in the reference photo' : `the ${n} different people from the ${n} reference photos (one person per photo, in the same order)`;
-  const prompt = `Create one photorealistic photo of ${who}, ${tpl.scene}. Medium-wide shot, everyone fully in frame from head to knees, faces sharp and clearly visible, natural candid smartphone photo. ${LOOK}`;
-  const out = await falRun(FRAME_MODEL, { prompt, image_urls: imgs, num_images: 1, aspect_ratio: document.querySelector('input[name=ar]:checked').value, output_format: 'jpeg' }, 'Kare hazırlanıyor');
-  const url = out.images && out.images[0] && out.images[0].url;
-  if (!url) throw new Error('Kare üretilemedi, başka fotoğraflarla dene.');
-  return url;
+  const add = document.createElement('div'); add.className = 'card add'; add.innerHTML = '<div style="font-size:2rem">＋</div><b>Kendi videonu ekle</b><span>Herhangi bir dans videosu şablon olur</span>';
+  add.addEventListener('click', () => openAddTpl()); real.appendChild(add);
 }
 
-
-// Dosyayı fal.ai depolamasına yükler, açık bir adres döndürür. Başarısız olursa null.
-async function uploadToFal(blob, name) {
+// Hazır videonun kapak karesini videodan alır (dosya yüklemeden).
+async function lazyPoster(t, img) {
   try {
-    const key = getKey();
-    const base = window.FAL_REST || 'https://rest.alpha.fal.ai';
-    const init = await fetch(`${base}/storage/upload/initiate?storage_type=fal-cdn-v3`, {
-      method: 'POST', headers: { Authorization: `Key ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content_type: blob.type || 'application/octet-stream', file_name: name }),
-    });
-    if (!init.ok) return null;
-    const { upload_url, file_url } = await init.json();
-    const put = await fetch(upload_url, { method: 'PUT', headers: { 'Content-Type': blob.type || 'application/octet-stream' }, body: blob });
-    return put.ok ? file_url : null;
-  } catch (e) { return null; }
+    if (!t.posterBlob) { const r = await fetch(t.video); if (!r.ok) return; const m = await probeVideo(await r.blob()); if (!m.poster) return; t.posterBlob = m.poster; }
+    img.src = blobUrl(t.posterBlob); img.style.display = '';
+  } catch (e) {}
 }
-async function dataUrlToBlob(u) { return (await fetch(u)).blob(); }
-// Fotoğrafı yükler; olmazsa data adresiyle devam eder.
-async function photoUrl(u, i) {
-  const blob = await dataUrlToBlob(u);
-  return (await uploadToFal(blob, `kisi${i + 1}.jpg`)) || u;
-}
-
-let refData = null;
-const toDataUrl = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Video okunamadı.')); r.readAsDataURL(blob); });
-function videoInfo(file) {
-  return new Promise((res) => {
-    const u = URL.createObjectURL(file); const v = document.createElement('video'); v.preload = 'metadata'; v.muted = true;
-    v.onloadedmetadata = () => { res({ dur: v.duration, w: v.videoWidth, h: v.videoHeight }); URL.revokeObjectURL(u); };
-    v.onerror = () => { res(null); URL.revokeObjectURL(u); };
-    v.src = u;
-  });
-}
-function refReset(msg, bad) { $('#refFile').value = ''; $('#refClear').hidden = true; const i = $('#refInfo'); i.textContent = msg; i.classList.toggle('bad', !!bad); }
-$('#refClear').addEventListener('click', () => refReset('Şu an: hazır örnek video kullanılıyor.'));
-$('#refFile').addEventListener('change', async () => {
-  const f = $('#refFile').files[0]; if (!f) { refReset('Şu an: hazır örnek video kullanılıyor.'); return; }
-  const i = $('#refInfo');
-  if (f.size > 8 * 1024 * 1024) { refReset('Seçtiğin video ' + (f.size / 1048576).toFixed(1) + ' MB. En fazla 8 MB olmalı. Hazır video kullanılıyor.', true); return; }
-  const m = await videoInfo(f);
-  if (!m) { refReset('Seçtiğin video okunamadı. Hazır video kullanılıyor.', true); return; }
-  const d = m.dur.toFixed(1);
-  if (m.dur > 10.05) { refReset('Seçtiğin video ' + d + ' saniye. En fazla 10 saniye olmalı. iPhone\'da Fotoğraflar > videoyu aç > Düzenle ile kısalt. Şimdilik hazır video kullanılıyor.', true); return; }
-  if (m.dur < 3) { refReset('Seçtiğin video ' + d + ' saniye. En az 3 saniye olmalı. Hazır video kullanılıyor.', true); return; }
-  if (m.w < 720 || m.h < 720) { refReset('Seçtiğin videonun boyutu ' + m.w + 'x' + m.h + '. Genişlik ve yükseklik en az 720 olmalı. Hazır video kullanılıyor.', true); return; }
-  i.classList.remove('bad'); i.textContent = 'Şu an: seçtiğin video kullanılıyor (' + f.name + ', ' + d + ' sn, ' + m.w + 'x' + m.h + ').'; $('#refClear').hidden = false;
+// Şablon ekleme
+let tDraft = null;
+function openAddTpl() { tDraft = null; $('#tName').value = ''; $('#tFile').value = ''; $('#tInfo').textContent = ''; $('#tErr').textContent = ''; renderPeopleOpts(1); sheet('sh-tpl', true); }
+function renderPeopleOpts(n) { $('#tPeople').innerHTML = [1, 2, 3, 4].map((k) => `<button class="opt ${k === n ? 'on' : ''}" data-n="${k}" style="min-width:60px;text-align:center"><b>${k}</b></button>`).join(''); $$('#tPeople .opt').forEach((b) => b.addEventListener('click', () => renderPeopleOpts(+b.dataset.n))); }
+$('#tFile').addEventListener('change', async () => {
+  const f = $('#tFile').files[0]; $('#tErr').textContent = ''; $('#tInfo').textContent = ''; tDraft = null; if (!f) return;
+  try {
+    const m = await probeVideo(f);
+    const d = Math.round(m.dur * 10) / 10;
+    if (m.dur < 5) throw new Error(`Video ${d} sn, en az 5 sn olmalı.`);
+    if (m.dur > 30) throw new Error(`Video ${d} sn, en fazla 30 sn olabilir. Fotoğraflar uygulamasında Düzenle ile kısalt.`);
+    if (Math.min(m.w, m.h) < 480) throw new Error('Video çözünürlüğü düşük. En az 720p çek ya da seç.');
+    if (f.size > 120 * 1024 * 1024) throw new Error('Video 120 MB\'tan küçük olmalı.');
+    tDraft = { file: f, meta: m };
+    $('#tInfo').textContent = `${d} sn, ${m.w}x${m.h}. 768p'de yaklaşık ${(d * M.recast.rate['768P']).toFixed(2).replace('.', ',')} $ / video.`;
+  } catch (e) { $('#tErr').textContent = e.message; $('#tFile').value = ''; }
 });
-async function getRef() {
-  const f = $('#refFile').files[0];
-  if (f) {
-    if (f.size > 8 * 1024 * 1024) throw new Error('Örnek video 8 MB\'tan küçük olmalı.');
-    return (await uploadToFal(f, 'ornek.mp4')) || toDataUrl(f);
-  }
-  if (refData) return refData;
-  let r;
-  try { r = await fetch('referans-halay-720.mp4'); } catch (e) { r = null; }
-  if (!r || !r.ok) throw new Error('referans-halay-720.mp4 bulunamadı. Zip içindeki tüm dosyalar birlikte yayınlanmalı ya da yukarıdan kendi örnek videonu seç.');
-  const blob = await r.blob();
-  refData = (await uploadToFal(blob, 'referans-halay.mp4')) || (await toDataUrl(blob));
-  return refData;
-}
-
-async function makeVideo(url) {
-  const tpl = TEMPLATES.find((t) => t.id === tplId);
-  const m = VIDEO[document.querySelector('input[name=m]:checked').value];
-  const dur = m.fixed || Math.min(+document.querySelector('input[name=dur]:checked').value, m.max);
-  let prompt = tpl.motion + MOTION_END;
-  if (m.audio) prompt += ' ' + tpl.audio;
-  const neg = 'blur, distort, morphing faces, deformed, low quality, extra people';
-  let body;
-  const isMC = m.model.includes('motion-control');
-  if (isMC) {
-    const ref = await getRef();
-    body = { prompt: 'The three people dance exactly like in the reference video, same steps, same energy. Keep every face and body identical to the image, natural realistic motion.', image_url: url, video_url: ref, character_orientation: 'video', keep_original_sound: true };
-  } else if (m.model.includes('reference-to-video')) {
-    const ref = await getRef();
-    const p = 'Image 1 is the first frame and shows the people (keep their faces, hairstyles and clothes exactly as in image 1). Video 1 is a reference video of a Turkish halay dance. Make the people from image 1 perform exactly the same halay figures as in video 1: the same leg kicks, steps, shoulder holds, handkerchief waving, rhythm, positions and the same smooth sideways camera movement. ' + tpl.audio;
-    body = { prompt: p.replace('Image 1', '@Image1').replace('image 1', '@Image1').replace('Video 1', '@Video1').replace('video 1', '@Video1'), image_urls: [url], video_urls: [ref], duration: String(dur), resolution: '720p', aspect_ratio: '16:9', generate_audio: true };
-  } else if (m.model.startsWith('bytedance')) body = { prompt, image_url: url, duration: String(dur), resolution: '720p', aspect_ratio: 'auto', generate_audio: true };
-  else if (m.audio) body = { prompt, start_image_url: url, duration: String(dur), generate_audio: true, negative_prompt: neg };
-  else body = { prompt, image_url: url, duration: String(dur), negative_prompt: neg };
-  let out;
-  try { out = await falRun(m.model, body, 'Video hazırlanıyor', { video: tplLabel() }); }
-  catch (e) {
-    // Bazı modeller süreyi sayı olarak ister; bir kez sayıyla dene.
-    if (!isMC && /duration/i.test(e.message)) { body.duration = dur; out = await falRun(m.model, body, 'Video hazırlanıyor', { video: tplLabel() }); } else throw e;
-  }
-  const v = out.video && out.video.url;
-  if (!v) throw new Error('Video üretilemedi.');
-  return v;
-}
-
-function updateEstimate() {
-  const m = VIDEO[document.querySelector('input[name=m]:checked').value];
-  const d = +document.querySelector('input[name=dur]:checked').value;
-  const eff = m.fixed || Math.min(d, m.max);
-  const cost = (m.rate * eff + (m.noFrame ? 0 : 0.15)).toFixed(2).replace('.', ',');
-  $('#est').textContent = `Tahmini toplam: yaklaşık ${cost} $ (${m.noFrame ? '' : 'kare + '}${eff} sn video).` + (d > m.max ? ` Bu modelde en fazla ${m.max} sn üretilir.` : '') + ' Fiyatlar fal.ai\'a göre değişebilir.';
-}
-document.querySelectorAll('input[name=m],input[name=dur]').forEach((r) => r.addEventListener('change', updateEstimate));
-
-async function runFrame() {
-  $('#stage').classList.toggle('wide', document.querySelector('input[name=ar]:checked').value === '16:9' || !!VIDEO[document.querySelector('input[name=m]:checked').value].wide);
-  $('#err').textContent = ''; setActions(''); $('#go').disabled = true; busyFrame = null;
-  stageMsg('Kare hazırlanıyor', 'Genelde 30-60 saniye sürer.', true); focusStage();
+$('#tCancel').addEventListener('click', () => sheet('sh-tpl', false));
+$('#tSave').addEventListener('click', async () => {
+  const name = $('#tName').value.trim(); const n = +($('#tPeople .opt.on') || {}).dataset?.n || 1;
+  if (!name) { $('#tErr').textContent = 'Şablona bir ad ver.'; return; }
+  if (!tDraft) { $('#tErr').textContent = 'Önce bir video seç.'; return; }
   try {
-    frameUrl = await makeFrame();
-    if (!$('#checkFirst').checked) { await runVideo(); return; }
-    $('#stage').innerHTML = `<img class="frame" src="${frameUrl}" alt="Üretilen kare">`;
-    setActions(`<button class="main" id="toVideo">Benziyor, videoya çevir</button><button id="again">Benzemiyor, yeni kare üret</button>`);
-    $('#toVideo').addEventListener('click', runVideo);
-    $('#again').addEventListener('click', runFrame);
-    focusStage();
-  } catch (err) {
-    stageMsg('Üretilemedi', err.message); $('#err').textContent = err.message;
-  } finally { $('#go').disabled = !photos.some(Boolean); }
+    await dbPut('templates', { id: 'u' + uid(), kind: 'real', builtin: false, name, people: n, dur: Math.round(tDraft.meta.dur), videoBlob: tDraft.file, posterBlob: tDraft.meta.poster, wide: tDraft.meta.w >= tDraft.meta.h, desc: 'Kendi videon. ' + n + ' kişi.' });
+    sheet('sh-tpl', false); toast('Şablon eklendi.'); loadTpls();
+  } catch (e) { $('#tErr').textContent = 'Kaydedilemedi: ' + e.message; }
+});
+
+// ---------- KİŞİLER ----------
+let people = [];
+async function loadPeople() { people = (await dbAll('people')).sort((a, b) => a.created - b.created); renderPeople(); }
+function renderPeople() {
+  const l = $('#plist'); l.innerHTML = '';
+  if (!people.length) l.innerHTML = '<p class="hint" style="grid-column:1/-1">Henüz kişi yok. "Kişi ekle" ile başla.</p>';
+  for (const p of people) {
+    const d = document.createElement('div'); d.className = 'person';
+    d.innerHTML = `<img src="${p.photo}" alt=""><div class="pn">${esc(p.name)}</div><button class="del" aria-label="Sil">✕</button>`;
+    $('.del', d).addEventListener('click', async () => { if (!confirm(`${p.name} silinsin mi?`)) return; await dbDel('people', p.id); loadPeople(); });
+    l.appendChild(d);
+  }
 }
+let pDraft = null;
+$('#addPerson').addEventListener('click', () => { pDraft = null; $('#pName').value = ''; $('#pFile').value = ''; $('#pPrev').classList.add('hide'); $('#pErr').textContent = ''; sheet('sh-person', true); });
+$('#pFile').addEventListener('change', async () => {
+  const f = $('#pFile').files[0]; if (!f) return; $('#pErr').textContent = '';
+  try { const b = await shrinkImage(f); pDraft = await toDataUrl(b); $('#pPrev').innerHTML = `<img src="${pDraft}" alt="">`; $('#pPrev').classList.remove('hide'); }
+  catch (e) { $('#pErr').textContent = e.message; }
+});
+$('#pCancel').addEventListener('click', () => sheet('sh-person', false));
+$('#pSave').addEventListener('click', async () => {
+  const name = $('#pName').value.trim(); if (!name) { $('#pErr').textContent = 'Bir ad yaz.'; return; } if (!pDraft) { $('#pErr').textContent = 'Bir fotoğraf seç.'; return; }
+  await dbPut('people', { id: 'p' + uid(), name, photo: pDraft, created: Date.now() }); sheet('sh-person', false); toast(name + ' kaydedildi.'); loadPeople();
+});
 
-
-
-// ---- Kalıcı galeri: videolar bu cihazda (IndexedDB) saklanır ----
-function tplLabel() {
-  const m = document.querySelector('input[name=m]:checked');
-  if (m && m.value === 'swap') return 'Birebir aynı video';
-  if (m && m.value === 'mc') return 'Gerçek hareket (stüdyo halayı)';
-  const t = TEMPLATES.find((x) => x.id === tplId);
-  return t ? t.name : 'Video';
+// ---------- ŞABLON DETAY ----------
+let cur = null, slots = [], qual = '768P', pickIdx = 0;
+function openTpl(id) {
+  cur = allTpls().find((t) => t.id === id); if (!cur) return;
+  slots = new Array(cur.people).fill(null); qual = '768P';
+  $('#tplName').textContent = cur.name; $('#tplDesc').textContent = cur.desc || '';
+  const k = $('#tplKind'); k.textContent = cur.kind === 'real' ? 'Gerçek video' : 'Yapay sahne'; k.className = 'pill ' + (cur.kind === 'real' ? 'ok' : '');
+  const hero = $('#hero'); hero.className = 'hero' + (cur.wide === false ? ' tall' : '');
+  if (cur.kind === 'real') {
+    const src = cur.videoBlob ? blobUrl(cur.videoBlob) : cur.video; const poster = cur.posterBlob ? blobUrl(cur.posterBlob) : (cur.poster || '');
+    hero.innerHTML = `<video src="${esc(src)}" poster="${esc(poster)}" playsinline loop muted preload="metadata"></video><div class="play">▶</div>`;
+    const v = $('video', hero); $('.play', hero).addEventListener('click', function () { v.muted = false; v.play().catch(() => { v.muted = true; v.play().catch(() => {}); }); this.remove(); });
+  } else hero.innerHTML = `<div class="msgbox"><div class="big">${esc(cur.name)}</div><p>Önce fotoğraflardan bir kare üretilir, beğenirsen videoya çevrilir.</p></div>`;
+  $('#slotTitle').textContent = cur.people === 1 ? 'Kişi' : `Kişiler (${cur.people})`;
+  $('#slotHint').textContent = cur.kind === 'real' ? 'Videodaki sıraya göre: soldan sağa' : 'Herkesin yüzü görünür olsun';
+  renderSlots();
+  const qs = $('#qualSec'), q = $('#qual');
+  if (cur.kind === 'real') { qs.classList.remove('hide'); q.classList.remove('hide'); renderQual(); } else { qs.classList.add('hide'); q.classList.add('hide'); }
+  $('#tplErr').textContent = ''; updateEstimate(); show('tpl');
 }
-function idb() {
-  return new Promise((res, rej) => {
-    if (!window.indexedDB) return rej(new Error('IndexedDB yok'));
-    const r = indexedDB.open('fotovideo', 1);
-    r.onupgradeneeded = () => r.result.createObjectStore('videos', { keyPath: 'id' });
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
+function renderQual() { $('#qual').innerHTML = [['768P', 'Standart', '0,30 $ / sn'], ['1080P', 'Yüksek', '0,45 $ / sn']].map(([v, n, p]) => `<button class="opt ${qual === v ? 'on' : ''}" data-q="${v}"><b>${n} (${v.toLowerCase()})</b><small>${p}</small></button>`).join(''); $$('#qual .opt').forEach((b) => b.addEventListener('click', () => { qual = b.dataset.q; renderQual(); updateEstimate(); })); }
+function renderSlots() {
+  const s = $('#slots'); s.innerHTML = '';
+  slots.forEach((p, i) => {
+    const d = document.createElement('div'); d.className = 'slot' + (p ? ' has' : '');
+    d.innerHTML = p ? `<img src="${p.photo}" alt=""><div class="lbl">${esc(p.name)}</div><button class="x">✕</button>` : `<div style="font-size:1.6rem">＋</div><div>${cur.people > 1 ? (i + 1) + '. kişi' : 'Fotoğraf seç'}</div>`;
+    d.addEventListener('click', (e) => { if (e.target.classList.contains('x')) { slots[i] = null; renderSlots(); updateEstimate(); return; } openPick(i); });
+    s.appendChild(d);
   });
 }
-async function idbTx(mode, fn) {
-  const db = await idb();
-  return new Promise((res, rej) => {
-    const tx = db.transaction('videos', mode); let req;
-    try { req = fn(tx.objectStore('videos')); } catch (e) { rej(e); return; }
-    tx.oncomplete = () => res(req && req.result);
-    tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error);
-  });
+function estimateCost() {
+  if (cur.kind === 'real') return cur.dur * M.recast.rate[qual];
+  return M.frame.cost + cur.dur * M.ai.rate;
 }
-const galPut = (it) => idbTx('readwrite', (st) => st.put(it));
-const galDel = (id) => idbTx('readwrite', (st) => st.delete(id));
-async function galList() {
-  let items = [];
-  try { items = (await idbTx('readonly', (st) => st.getAll())) || []; } catch (e) {}
-  try { items = items.concat(JSON.parse(localStorage.getItem('galUrls') || '[]').map((x, i) => ({ id: 'u' + i + x.created, ...x }))); } catch (e) {}
-  return items.sort((a, b) => b.created - a.created);
+function updateEstimate() {
+  const c = estimateCost().toFixed(2).replace('.', ',');
+  $('#estimate').innerHTML = cur.kind === 'real'
+    ? `<b>Tahmini ücret: ${c} $</b> (${cur.dur} sn × ${M.recast.rate[qual].toFixed(2).replace('.', ',')} $). Videodaki ${cur.people} kişi soldan sağa senin fotoğraflarınla değişir; hareket, kamera ve müzik aynı kalır. Genelde 3-8 dakika sürer.`
+    : `<b>Tahmini ücret: ${c} $</b> (kare 0,15 $ + ${cur.dur} sn × 0,25 $). Önce kare üretilir; benzemezse videoya para harcamadan yeni kare istersin. Hareket yapay zekâ tarafından uydurulur, gerçek videolar kadar doğal olmaz.`;
+  $('#go').disabled = !slots.every(Boolean);
+  $('#go').textContent = slots.every(Boolean) ? (cur.kind === 'real' ? 'Videoyu üret' : 'Kareyi üret') : `${slots.filter(Boolean).length}/${cur.people} kişi seçildi`;
 }
+$('#back').addEventListener('click', () => show('home'));
+$('#back2').addEventListener('click', () => show('home'));
+
+// Kişi seçme
+function openPick(i) {
+  pickIdx = i; $('#pickTitle').textContent = cur.people > 1 ? `${i + 1}. kişi (${i === 0 ? 'en solda' : i === cur.people - 1 ? 'en sağda' : 'ortada'})` : 'Kişi seç';
+  const l = $('#pickList'); l.innerHTML = people.length ? '' : '<p class="hint" style="grid-column:1/-1">Kayıtlı kişi yok. Galeriden yükle ya da Kişiler bölümünden ekle.</p>';
+  for (const p of people) { const d = document.createElement('div'); d.className = 'person'; d.innerHTML = `<img src="${p.photo}" alt=""><div class="pn">${esc(p.name)}</div>`; d.addEventListener('click', () => { slots[pickIdx] = p; sheet('sh-pick', false); renderSlots(); updateEstimate(); }); l.appendChild(d); }
+  sheet('sh-pick', true);
+}
+$('#pickCancel').addEventListener('click', () => sheet('sh-pick', false));
+$('#pickUpload').addEventListener('click', () => $('#pickFile').click());
+$('#pickFile').addEventListener('change', async () => {
+  const f = $('#pickFile').files[0]; $('#pickFile').value = ''; if (!f) return;
+  try { const b = await shrinkImage(f); const photo = await toDataUrl(b); slots[pickIdx] = { id: 't' + uid(), name: 'Fotoğraf', photo }; sheet('sh-pick', false); renderSlots(); updateEstimate(); }
+  catch (e) { toast(e.message); }
+});
+
+// ---------- ÜRETİM ----------
+$('#go').addEventListener('click', () => {
+  if (!slots.every(Boolean)) return;
+  try { getKey(); } catch (e) { $('#tplErr').textContent = e.message; show('set'); return; }
+  const c = estimateCost().toFixed(2).replace('.', ',');
+  $('#okBody').innerHTML = `<div class="kv"><span>Şablon</span><b>${esc(cur.name)}</b></div><div class="kv"><span>Kişiler</span><b>${slots.map((p) => esc(p.name)).join(', ')}</b></div><div class="kv"><span>Tahmini ücret</span><b>${c} $</b></div><p class="hint">Ücret fal.ai bakiyenden düşer. ${cur.kind === 'real' ? 'Üretim başlayınca ekranı kapatabilirsin, bitince "Videolarım"a eklenir.' : 'Önce yalnızca kare için 0,15 $ harcanır.'}</p>`;
+  sheet('sh-ok', true);
+});
+$('#okNo').addEventListener('click', () => sheet('sh-ok', false));
+$('#okYes').addEventListener('click', () => { sheet('sh-ok', false); cur.kind === 'real' ? runRecast() : runAiFrame(); });
+
+function stageWait(big, p) { $('#stage').innerHTML = `<div class="msgbox"><div class="spin"></div><div class="big">${esc(big)}</div><p id="stP">${esc(p || '')}</p><div class="bar"><i id="stBar"></i></div></div>`; $('#runErr').textContent = ''; $('#runActions').innerHTML = ''; $('#runPill').textContent = 'Üretiliyor'; $('#runPill').className = 'pill'; }
+function stageFail(msg, retry) {
+  $('#stage').innerHTML = `<div class="msgbox"><div class="big" style="color:var(--bad)">Üretilemedi</div><p>Ücret alınmadı.</p></div>`; $('#runErr').textContent = msg; $('#runPill').textContent = 'Hata'; $('#runPill').className = 'pill bad';
+  const a = $('#runActions'); a.innerHTML = (retry ? '<button class="btn main" id="retry">Tekrar dene</button>' : '') + '<button class="btn" id="toHome">Şablonlara dön</button>';
+  if (retry) $('#retry').addEventListener('click', retry); $('#toHome').addEventListener('click', () => show('home'));
+}
+function progress(expectSec) { progressFn = (sec, qp) => { const b = $('#stBar'), p = $('#stP'); if (b) b.style.width = Math.min(96, 100 * sec / expectSec) + '%'; if (p) p.textContent = `${Math.floor(sec / 60)} dk ${sec % 60} sn geçti.` + (qp ? ` Sırada ${qp}. sıradasın.` : '') + ' Ekranı kapatabilirsin.'; }; }
+
+async function slotUrls() {
+  const out = [];
+  for (let i = 0; i < slots.length; i++) { const b = await dataUrlToBlob(slots[i].photo); out.push(await uploadToFal(b, `kisi${i + 1}.jpg`)); }
+  return out;
+}
+async function tplVideoUrl() {
+  if (cur.videoUrl && Date.now() - cur.videoUrlAt < 3600 * 1000) return cur.videoUrl;
+  let blob = cur.videoBlob;
+  if (!blob) { const r = await fetch(cur.video); if (!r.ok) throw new Error('Şablon videosu bulunamadı (' + cur.video + ').'); blob = await r.blob(); }
+  cur.videoUrl = await uploadToFal(blob, 'sablon.mp4'); cur.videoUrlAt = Date.now(); return cur.videoUrl;
+}
+async function runRecast() {
+  const label = cur.name; show('run'); stageWait('Video hazırlanıyor', 'Dosyalar yükleniyor...');
+  try {
+    const imgs = await slotUrls(); const vid = await tplVideoUrl();
+    stageWait('Video hazırlanıyor', 'Model çalışıyor. Genelde 3-8 dakika sürer.'); progress(cur.dur * 30);
+    const who = slots.map((p, i) => `person ${i + 1} (from left) becomes the person in reference photo ${i + 1}`).join('; ');
+    const out = await falRun(M.recast.id, { video_url: vid, reference_image_urls: imgs, resolution: qual, prompt: `Replace the ${cur.people} main people: ${who}. Keep each new person's face, hair, skin tone and body exactly as in their photo. Keep the original clothing, motion, choreography, camera, background and audio unchanged.` }, label);
+    const v = out.video && out.video.url; if (!v) throw new Error('Video üretilemedi.');
+    await galAdd(v, label); showVideo(v, label);
+  } catch (e) { stageFail(e.message, runRecast); }
+  finally { progressFn = null; }
+}
+let frameUrl = null;
+async function runAiFrame() {
+  show('run'); stageWait('Kare hazırlanıyor', 'Genelde 30-60 saniye sürer.'); progress(60);
+  try {
+    const imgs = await slotUrls(); const n = imgs.length;
+    const who = n === 1 ? 'the person in the reference photo' : `the ${n} different people from the ${n} reference photos (one person per photo, in the same order from left to right)`;
+    const out = await falRun(M.frame.id, { prompt: `Create one photorealistic photo of ${who}, ${cur.scene}. Medium-wide shot, everyone fully in frame from head to knees, faces sharp and clearly visible, natural candid smartphone photo. ${LOOK}`, image_urls: imgs, num_images: 1, aspect_ratio: '9:16', output_format: 'jpeg' });
+    frameUrl = out.images && out.images[0] && out.images[0].url; if (!frameUrl) throw new Error('Kare üretilemedi, başka fotoğraflarla dene.');
+    $('#stage').innerHTML = `<img src="${frameUrl}" alt="Üretilen kare">`; $('#runPill').textContent = 'Kare hazır'; $('#runPill').className = 'pill ok';
+    $('#runActions').innerHTML = `<button class="btn main" id="toVideo">Benziyor, videoya çevir (~${(cur.dur * M.ai.rate).toFixed(2).replace('.', ',')} $)</button><button class="btn" id="again">Benzemiyor, yeni kare (0,15 $)</button>`;
+    $('#toVideo').addEventListener('click', runAiVideo); $('#again').addEventListener('click', runAiFrame);
+  } catch (e) { stageFail(e.message, runAiFrame); }
+  finally { progressFn = null; }
+}
+async function runAiVideo() {
+  const label = cur.name; stageWait('Video hazırlanıyor', 'Genelde 1-3 dakika sürer.'); progress(180);
+  try {
+    const out = await falRun(M.ai.id, { prompt: cur.motion + ' Keep all faces exactly as in the photo, stable and undistorted, natural realistic motion, handheld smartphone video.', image_url: frameUrl, duration: String(cur.dur), resolution: '720p', aspect_ratio: 'auto', generate_audio: true }, label);
+    const v = out.video && out.video.url; if (!v) throw new Error('Video üretilemedi.');
+    await galAdd(v, label); showVideo(v, label);
+  } catch (e) { stageFail(e.message, runAiVideo); }
+  finally { progressFn = null; }
+}
+
+// ---------- SONUÇ + GALERİ ----------
 const blobCache = {};
-function getBlob(url) { return blobCache[url] || (blobCache[url] = fetch(url).then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); })); }
+const getBlob = (url) => blobCache[url] || (blobCache[url] = fetch(url).then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); }));
+function showVideo(url, label) {
+  show('run'); $('#runErr').textContent = ''; $('#runPill').textContent = 'Hazır'; $('#runPill').className = 'pill ok';
+  $('#stage').innerHTML = `<video src="${url}" playsinline controls loop preload="auto"></video>`;
+  const a = $('#runActions'); a.innerHTML = `<button class="btn main" id="saveBtn" disabled>Kaydetmeye hazırlanıyor...</button><div class="row"><button class="btn" id="openBtn">Videoyu aç</button><button class="btn" id="againBtn">Yeniden üret</button></div>`;
+  $('#openBtn').addEventListener('click', () => window.open(url, '_blank'));
+  $('#againBtn').addEventListener('click', () => cur ? openTpl(cur.id) : show('home'));
+  getBlob(url).then((blob) => { const b = $('#saveBtn'); if (!b) return; b.disabled = false; b.textContent = 'Videoyu kaydet / paylaş'; b.addEventListener('click', () => shareBlob(blob, label)); }).catch(() => { const b = $('#saveBtn'); if (b) b.textContent = 'Kaydedilemedi, "Videoyu aç"a bas'; });
+}
+async function shareBlob(blob, label) {
+  const file = new File([blob], (label || 'video').replace(/[^\wğüşıöçĞÜŞİÖÇ]+/g, '-') + '.mp4', { type: 'video/mp4' });
+  try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: label || 'Video' }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
+  toast('İndirme başladı. Dosyalar › İndirilenler klasörüne bak.');
+}
+async function galList() { return (await dbAll('videos')).sort((a, b) => b.created - a.created); }
 async function galAdd(url, label) {
   try {
-    if ((await galList()).some((x) => x.url === url)) { renderGallery(); return; }
+    if ((await galList()).some((x) => x.url === url)) return renderGallery();
     let blob = null; try { blob = await getBlob(url); } catch (e) {}
-    try {
-      await galPut({ id: Date.now() + '-' + Math.random().toString(36).slice(2, 6), created: Date.now(), label, url, blob });
-      const items = (await galList()).filter((x) => !String(x.id).startsWith('u'));
-      for (const x of items.slice(20)) await galDel(x.id);
-    } catch (e) {
-      const l = JSON.parse(localStorage.getItem('galUrls') || '[]'); l.unshift({ url, label, created: Date.now() });
-      localStorage.setItem('galUrls', JSON.stringify(l.slice(0, 20)));
-    }
+    await dbPut('videos', { id: uid(), created: Date.now(), label, url, blob });
+    const items = await galList(); for (const x of items.slice(30)) await dbDel('videos', x.id);
   } catch (e) {}
   renderGallery();
 }
-async function shareItem(it) {
-  if (!it.blob) { window.open(it.url, '_blank'); return; }
-  const file = new File([it.blob], 'halay-video.mp4', { type: 'video/mp4' });
-  try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Halay videosu' }); return; } }
-  catch (e) { if (e && e.name === 'AbortError') return; }
-  const a = document.createElement('a'); a.href = URL.createObjectURL(it.blob); a.download = 'halay-video.mp4'; document.body.appendChild(a); a.click(); a.remove();
-}
-let galUrls = [];
 async function renderGallery() {
-  const items = await galList();
-  galUrls.forEach((u) => URL.revokeObjectURL(u)); galUrls = [];
-  const grid = $('#galGrid'); grid.innerHTML = '';
-  $('#galHint').textContent = items.length ? 'Ürettiğin videolar bu cihazda saklanır. Ekran kapansa ya da sayfa yenilense de kaybolmaz.' : 'Ürettiğin videolar burada saklanır. Henüz video yok.';
+  const items = await galList(); const g = $('#galGrid'); g.innerHTML = '';
+  $('#galHint').textContent = items.length ? `${items.length} video. Ekran kapansa da burada kalır.` : 'Ürettiğin videolar burada saklanır. Henüz video yok.';
   $('#galClear').hidden = !items.length;
   for (const it of items) {
-    let src = it.url;
-    if (it.blob) { src = URL.createObjectURL(it.blob); galUrls.push(src); }
-    const d = document.createElement('div'); d.className = 'gitem';
-    const when = new Date(it.created).toLocaleString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
-    d.innerHTML = `<video src="${src}" controls playsinline preload="metadata"></video><div class="gmeta"><b>${it.label || 'Video'}</b><br>${when}</div><div class="gbtns"><button class="sv">Kaydet</button><button class="del">Sil</button></div>`;
-    d.querySelector('.sv').addEventListener('click', () => shareItem(it));
-    d.querySelector('.del').addEventListener('click', async () => {
-      if (!confirm('Bu video silinsin mi?')) return;
-      try { await galDel(it.id); } catch (e) {}
-      try { const l = JSON.parse(localStorage.getItem('galUrls') || '[]').filter((x) => x.url !== it.url); localStorage.setItem('galUrls', JSON.stringify(l)); } catch (e) {}
-      renderGallery();
-    });
-    grid.appendChild(d);
+    const src = it.blob ? blobUrl(it.blob) : it.url; const d = document.createElement('div'); d.className = 'gitem';
+    d.innerHTML = `<video src="${esc(src)}" controls playsinline preload="metadata"></video><div class="gm"><b>${esc(it.label || 'Video')}</b><small>${new Date(it.created).toLocaleString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</small></div><div class="gb"><button class="btn sm main sv">Kaydet / paylaş</button><button class="btn sm del">Sil</button></div>`;
+    $('.sv', d).addEventListener('click', async () => { try { shareBlob(it.blob || await getBlob(it.url), it.label); } catch (e) { window.open(it.url, '_blank'); } });
+    $('.del', d).addEventListener('click', async () => { if (!confirm('Bu video silinsin mi?')) return; await dbDel('videos', it.id); renderGallery(); });
+    g.appendChild(d);
   }
 }
-$('#galClear').addEventListener('click', async () => {
-  if (!confirm('Tüm kayıtlı videolar silinsin mi?')) return;
-  for (const it of await galList()) { try { await galDel(it.id); } catch (e) {} }
-  try { localStorage.removeItem('galUrls'); } catch (e) {}
-  renderGallery();
-});
+$('#galClear').addEventListener('click', async () => { if (!confirm('Tüm kayıtlı videolar silinsin mi?')) return; for (const it of await galList()) await dbDel('videos', it.id); renderGallery(); });
 
-async function runSwap() {
-  $('#err').textContent = ''; setActions(''); $('#go').disabled = true;
-  const imgs = photos.filter(Boolean);
-  try {
-    if (imgs.length !== 3) throw new Error('Bu seçenek için 3 kişinin fotoğrafı gerekir. Örnek videodaki üç kişinin yerine sizinkiler geçecek.');
-    busyFrame = null; $('#stage').classList.add('wide');
-    stageMsg('Video hazırlanıyor', 'Genelde 2-5 dakika sürer. Sayfayı kapatma.', true); focusStage();
-    const ref = await getRef();
-    stageMsg('Video hazırlanıyor', 'Fotoğraflar yükleniyor...', true);
-    const imgUrls = await Promise.all(imgs.map(photoUrl));
-    const prompt = 'Replace the three dancing people in the video: the person on the left who holds the white handkerchief with @Element1, the person in the middle with @Element2, and the person on the right with @Element3. Keep exactly the same movements, dance steps, timing, background and camera movement as in the original video. The new people must keep their own faces, hair and skin tone exactly as in their element images.';
-    const mk = (withRef) => ({ prompt, video_url: ref, keep_audio: true, elements: imgUrls.map((u) => withRef ? { frontal_image_url: u, reference_image_urls: [u] } : { frontal_image_url: u }) });
-    let out;
-    try { out = await falRun(VIDEO.swap.model, mk(true), 'Video hazırlanıyor', { video: tplLabel() }); }
-    catch (e) {
-      if (/reference|element/i.test(e.message)) out = await falRun(VIDEO.swap.model, mk(false), 'Video hazırlanıyor', { video: tplLabel() }); else throw e;
-    }
-    const v = out.video && out.video.url;
-    if (!v) throw new Error('Video üretilemedi.');
-    showVideo(v);
-  } catch (err) {
-    stageMsg('Video üretilemedi', err.message); $('#err').textContent = err.message;
-  } finally { $('#go').disabled = !photos.some(Boolean); }
-}
-
-function showVideo(url) {
-  busyFrame = null;
-  // Ses için otomatik oynatma yok: Safari ve diğer tarayıcılar sesli videoyu kendiliğinden başlatmaz.
-  $('#stage').innerHTML = `<video src="${url}" loop playsinline controls preload="auto"></video><button class="playbtn" id="playbtn" aria-label="Videoyu oynat">&#9654;</button>`;
-  const v = $('#stage video');
-  $('#playbtn').addEventListener('click', () => { v.play().catch(() => {}); });
-  v.addEventListener('play', () => { const b = $('#playbtn'); if (b) b.remove(); });
-  v.addEventListener('error', () => { $('#err').textContent = 'Video bu tarayıcıda oynamadı. "Videoyu aç" bağlantısını dene.'; });
-  setActions(`<button class="main" id="saveBtn" disabled>Kaydetmeye hazırlanıyor...</button><a href="${url}" target="_blank" rel="noopener">Videoyu aç</a><button id="again2">Yeniden dene</button>`);
-  $('#again2').addEventListener('click', () => (VIDEO[document.querySelector('input[name=m]:checked').value].noFrame ? runSwap() : runFrame()));
-  prepareSave(url);
-  galAdd(url, tplLabel());
-  focusStage();
-}
-
-// Videoyu önceden indirip hazır tutar: iPhone'da paylaşma menüsü ancak dokunma anında açılabilir.
-function prepareSave(url) {
-  const btn = $('#saveBtn');
-  getBlob(url).then((blob) => {
-    const file = new File([blob], 'halay-video.mp4', { type: 'video/mp4' });
-    btn.disabled = false; btn.textContent = 'Videoyu kaydet';
-    btn.addEventListener('click', async () => {
-      try {
-        if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Halay videosu' }); return; }
-      } catch (e) { if (e && e.name === 'AbortError') return; }
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'halay-video.mp4';
-      document.body.appendChild(a); a.click(); a.remove();
-      $('#err').textContent = 'İndirme başladıysa Dosyalar uygulamasındaki İndirilenler klasörüne bak. Olmadıysa "Videoyu aç" bağlantısına basıp videoya uzun basarak kaydet.';
-    });
-  }).catch(() => { btn.disabled = true; btn.textContent = 'Kaydedilemedi, "Videoyu aç"a bas'; });
-}
-
-async function runVideo() {
-  $('#err').textContent = ''; setActions(''); busyFrame = frameUrl;
-  stageMsg('Video hazırlanıyor', 'Genelde 1-3 dakika sürer. Sayfayı kapatma.', true); focusStage();
-  try {
-    const url = await makeVideo(frameUrl);
-    showVideo(url);
-  } catch (err) {
-    busyFrame = null;
-    $('#stage').innerHTML = `<img class="frame" src="${frameUrl}" alt="Üretilen kare">`;
-    $('#err').textContent = err.message;
-    setActions(`<button class="main" id="toVideo">Videoyu tekrar dene</button><button id="again">Yeni kare üret</button>`);
-    $('#toVideo').addEventListener('click', runVideo);
-    $('#again').addEventListener('click', runFrame);
-  }
-}
-
-$('#go').addEventListener('click', () => (VIDEO[document.querySelector('input[name=m]:checked').value].noFrame ? runSwap() : runFrame()));
-function syncGo() {
-  const noFrame = VIDEO[document.querySelector('input[name=m]:checked').value].noFrame;
-  $('#go').textContent = noFrame ? 'Videoyu üret' : 'Kare ve videoyu üret';
-  $('#chkWrap').style.display = noFrame ? 'none' : 'flex';
-  $('#stage').classList.toggle('wide', noFrame || !!VIDEO[document.querySelector('input[name=m]:checked').value].wide || document.querySelector('input[name=ar]:checked').value === '16:9');
-}
-document.querySelectorAll('input[name=m],input[name=ar]').forEach((r) => r.addEventListener('change', syncGo));
-window.__app = { photos, renderSlots };
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
-renderSlots();
-updateEstimate();
-syncGo();
-if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-renderGallery();
-resumePending();
+// ---------- BAŞLANGIÇ ----------
+(async () => {
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  await loadPeople(); await loadTpls(); await renderGallery(); resumePending();
+})();
 document.addEventListener('visibilitychange', () => { if (!document.hidden) resumePending(); });
+window.__app = { get slots() { return slots; }, set slots(v) { slots = v; renderSlots(); updateEstimate(); }, openTpl, show, get cur() { return cur; }, galList, renderGallery, dbPut, loadPeople, loadTpls };
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
 </html>
