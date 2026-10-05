@@ -134,6 +134,10 @@
   .stage .playbtn { position: absolute; inset: 0; margin: auto; width: 96px; height: 96px; border-radius: 50%; border: 0; background: var(--kilim); color: #fff; font-size: 40px; cursor: pointer; display: grid; place-items: center; }
   .chk { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; font-size: .95rem; }
   .chk input { width: 22px; height: 22px; margin-top: 2px; }
+  .linkbtn { background: none; border: 0; color: var(--kilim-dark); text-decoration: underline; font: inherit; font-size: .9rem; padding: 8px 0 0; cursor: pointer; }
+  .refrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .refrow button { font: inherit; padding: 8px 12px; border: 2px solid var(--ink); background: var(--white); border-radius: 8px; cursor: pointer; }
+  .bad { color: #9E2D18; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -154,6 +158,7 @@
           <button id="saveKey" type="button">Kaydet</button>
         </div>
         <p class="ok" id="keyOk" hidden>Anahtar kaydedildi.</p>
+        <button id="copyLink" type="button" class="linkbtn">Anahtarı başka cihaza aktarmak için bağlantı kopyala</button>
       </div>
 
       <section>
@@ -189,7 +194,8 @@
         </div>
         <p class="hint" id="est"></p>
         <p class="hint">Örnek video hazır gelir. Başka bir örnek video kullanmak istersen buradan seç (3-10 sn, en az 720 piksel yükseklik, en fazla 8 MB):</p>
-        <input type="file" id="refFile" accept="video/*" aria-label="Kendi örnek hareket videon">
+        <div class="refrow"><input type="file" id="refFile" accept="video/*" aria-label="Kendi örnek hareket videon"><button id="refClear" type="button" hidden>Seçimi kaldır</button></div>
+        <p class="hint" id="refInfo">Şu an: hazır örnek video kullanılıyor.</p>
       </section>
 
       <label class="chk" id="chkWrap"><input type="checkbox" id="checkFirst"><span>Önce kareyi göster, ben onaylayınca videoyu üret. (İşaretlemezsen kare ve video otomatik arka arkaya üretilir.)</span></label>
@@ -250,13 +256,42 @@ let tplId = TEMPLATES[0].id, frameUrl = null;
 const sleep = () => new Promise((r) => setTimeout(r, window.POLL_MS || 4000));
 
 const keyInput = $('#key');
-keyInput.value = (localStorage.getItem('falKey') || '').replace(/["'\s]/g, '');
+function readStoredKey() {
+  let k = '';
+  try { k = localStorage.getItem('falKey') || ''; } catch (e) {}
+  if (!k) { const m = document.cookie.match(/(?:^|; )falKey=([^;]*)/); if (m) k = decodeURIComponent(m[1]); }
+  return cleanKey(k);
+}
+function storeKey(k) {
+  try { localStorage.setItem('falKey', k); } catch (e) {}
+  try { document.cookie = 'falKey=' + encodeURIComponent(k) + '; max-age=31536000; path=' + location.pathname.replace(/[^/]*$/, '') + '; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : ''); } catch (e) {}
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+}
+function keyStatus(text, color) { const ok = $('#keyOk'); ok.hidden = false; ok.textContent = text; ok.style.color = color || '#1F7A3E'; }
+// Bağlantıyla aktarım: ...#k=ANAHTAR açılırsa anahtar bu cihaza kaydedilir ve adresten silinir.
+(function importFromHash() {
+  const m = location.hash.match(/^#k=(.+)$/);
+  if (!m) return;
+  const k = cleanKey(decodeURIComponent(m[1]));
+  if (k.length >= 20) { storeKey(k); history.replaceState(null, '', location.pathname + location.search); window.__importedKey = true; }
+})();
+keyInput.value = readStoredKey();
+if (keyInput.value) keyStatus(window.__importedKey ? 'Anahtar bağlantıdan alındı ve bu cihaza kaydedildi.' : 'Anahtar bu cihazda kayıtlı.');
+// Yapıştırır yapıştırmaz kendiliğinden kaydet: "Kaydet"e basmayı unutsan da anahtar kaybolmaz.
+keyInput.addEventListener('input', () => { const k = cleanKey(keyInput.value); if (k.length >= 20) { storeKey(k); keyStatus('Anahtar bu cihazda kayıtlı.'); } });
+$('#copyLink').addEventListener('click', async () => {
+  const k = cleanKey(keyInput.value) || readStoredKey();
+  if (!k) { keyStatus('Önce anahtarı yapıştır.', '#9E2D18'); return; }
+  const link = location.origin + location.pathname + '#k=' + encodeURIComponent(k);
+  try { await navigator.clipboard.writeText(link); keyStatus('Bağlantı kopyalandı. Bunu yalnızca kendine gönder (örn. kendi WhatsApp sohbetine). İçinde anahtarın var, kimseyle paylaşma.'); }
+  catch (e) { window.prompt('Bu bağlantıyı kopyala ve yalnızca kendine gönder:', link); }
+});
 $('#saveKey').addEventListener('click', async () => {
   const k = cleanKey(keyInput.value);
   const ok = $('#keyOk');
   ok.hidden = false; ok.style.color = '';
   if (!k) { ok.textContent = 'Anahtar kutusu boş.'; ok.style.color = '#9E2D18'; return; }
-  keyInput.value = k; localStorage.setItem('falKey', k);
+  keyInput.value = k; storeKey(k);
   ok.textContent = 'Anahtar sınanıyor...';
   try {
     const base = window.FAL_REST || 'https://rest.alpha.fal.ai';
@@ -319,17 +354,26 @@ function stageMsg(big, small, loading) {
   else $('#stage').innerHTML = `<div class="msg"><div class="big">${big}</div><p>${small || ''}</p>${bar}</div>`;
 }
 function setActions(html) { $('#actions').innerHTML = html; $('#actions').classList.toggle('on', !!html); }
+function trErr(m) {
+  if (/duration exceeds|Maximum is 10/i.test(m)) return 'Örnek video çok uzun: en fazla 10 saniye olmalı. iPhone\'da Fotoğraflar > videoyu aç > Düzenle > uçlardaki tutamaçları sürükleyerek 10 saniyeye kısalt, ya da "Seçimi kaldır" diyerek hazır videoyu kullan.';
+  if (/duration.*(minimum|less|short)|Minimum is 3/i.test(m)) return 'Örnek video çok kısa: en az 3 saniye olmalı.';
+  if (/(width|height|resolution).*(minimum|below|at least|small)|Minimum (width|height)/i.test(m)) return 'Örnek videonun çözünürlüğü düşük: genişlik ve yükseklik en az 720 piksel olmalı. "Seçimi kaldır" diyerek hazır videoyu kullan.';
+  if (/Authentication is required|Cannot access application|Invalid Key|Unauthorized/i.test(m)) return 'fal.ai anahtarı geçersiz ya da eksik. Anahtarı yukarıya yeniden yapıştırıp Kaydet\'e bas; kırmızı çıkarsa fal.ai\'da yeni anahtar oluştur.';
+  if (/face/i.test(m)) return 'Fotoğraflardan birinde net bir yüz bulunamadı. Daha net, önden çekilmiş bir fotoğraf dene.';
+  return m;
+}
 function falError(d, status) {
   const x = d && (d.detail || d.error || d.message);
-  if (typeof x === 'string') return x;
-  if (Array.isArray(x) && x[0]) return x.slice(0, 3).map((e) => (e.loc ? e.loc.filter((p) => p !== 'body').join('.') + ': ' : '') + (e.msg || JSON.stringify(e))).join(' | ');
+  if (typeof x === 'string') return trErr(x);
+  if (Array.isArray(x) && x[0]) return x.slice(0, 3).map((e) => trErr((e.loc ? e.loc.filter((p) => p !== 'body').join('.') + ': ' : '') + (e.msg || JSON.stringify(e)))).join(' | ');
   if (status === 401 || status === 403) return 'fal.ai anahtarı geçersiz ya da bakiye yok.';
   if (status === 422) return 'Girdi geçersiz (422). Fotoğraflarda net bir yüz olmayabilir ya da video koşulları uymuyor.';
   return `Video servisi hata verdi (${status}).`;
 }
 function cleanKey(v) { return (v || '').replace(/^\s*(FAL_KEY\s*=|Key\s+)/i, '').replace(/["'\s]/g, ''); }
 function getKey() {
-  const key = cleanKey(keyInput.value) || cleanKey(localStorage.getItem('falKey'));
+  const key = cleanKey(keyInput.value) || readStoredKey();
+  if (key && key !== readStoredKey()) storeKey(key);
   if (!key) throw new Error('Önce yukarıya fal.ai anahtarını yapıştırıp Kaydet\'e bas.');
   return key;
 }
@@ -349,7 +393,7 @@ async function falRun(model, input, label) {
     if (st.status === 'COMPLETED') {
       const o = await fetch(d.response_url, { headers });
       const out = await o.json().catch(() => ({}));
-      if (!o.ok) throw new Error(falError(out, o.status) + ' (Fotoğraf uygun olmayabilir, başka bir fotoğrafla dene.)');
+      if (!o.ok) { const fe = falError(out, o.status); throw new Error(/video|örnek|yüz/i.test(fe) ? fe : fe + ' (Fotoğraf uygun olmayabilir, başka bir fotoğrafla dene.)'); }
       return out;
     }
     const sec = Math.round((Date.now() - t0) / 1000);
@@ -394,6 +438,28 @@ async function photoUrl(u, i) {
 
 let refData = null;
 const toDataUrl = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Video okunamadı.')); r.readAsDataURL(blob); });
+function videoInfo(file) {
+  return new Promise((res) => {
+    const u = URL.createObjectURL(file); const v = document.createElement('video'); v.preload = 'metadata'; v.muted = true;
+    v.onloadedmetadata = () => { res({ dur: v.duration, w: v.videoWidth, h: v.videoHeight }); URL.revokeObjectURL(u); };
+    v.onerror = () => { res(null); URL.revokeObjectURL(u); };
+    v.src = u;
+  });
+}
+function refReset(msg, bad) { $('#refFile').value = ''; $('#refClear').hidden = true; const i = $('#refInfo'); i.textContent = msg; i.classList.toggle('bad', !!bad); }
+$('#refClear').addEventListener('click', () => refReset('Şu an: hazır örnek video kullanılıyor.'));
+$('#refFile').addEventListener('change', async () => {
+  const f = $('#refFile').files[0]; if (!f) { refReset('Şu an: hazır örnek video kullanılıyor.'); return; }
+  const i = $('#refInfo');
+  if (f.size > 8 * 1024 * 1024) { refReset('Seçtiğin video ' + (f.size / 1048576).toFixed(1) + ' MB. En fazla 8 MB olmalı. Hazır video kullanılıyor.', true); return; }
+  const m = await videoInfo(f);
+  if (!m) { refReset('Seçtiğin video okunamadı. Hazır video kullanılıyor.', true); return; }
+  const d = m.dur.toFixed(1);
+  if (m.dur > 10.05) { refReset('Seçtiğin video ' + d + ' saniye. En fazla 10 saniye olmalı. iPhone\'da Fotoğraflar > videoyu aç > Düzenle ile kısalt. Şimdilik hazır video kullanılıyor.', true); return; }
+  if (m.dur < 3) { refReset('Seçtiğin video ' + d + ' saniye. En az 3 saniye olmalı. Hazır video kullanılıyor.', true); return; }
+  if (m.w < 720 || m.h < 720) { refReset('Seçtiğin videonun boyutu ' + m.w + 'x' + m.h + '. Genişlik ve yükseklik en az 720 olmalı. Hazır video kullanılıyor.', true); return; }
+  i.classList.remove('bad'); i.textContent = 'Şu an: seçtiğin video kullanılıyor (' + f.name + ', ' + d + ' sn, ' + m.w + 'x' + m.h + ').'; $('#refClear').hidden = false;
+});
 async function getRef() {
   const f = $('#refFile').files[0];
   if (f) {
