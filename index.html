@@ -138,6 +138,14 @@
   .refrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .refrow button { font: inherit; padding: 8px 12px; border: 2px solid var(--ink); background: var(--white); border-radius: 8px; cursor: pointer; }
   .bad { color: #9E2D18; font-weight: 600; }
+  .gallery { margin-top: 56px; }
+  .galgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-top: 14px; }
+  .gitem { background: var(--ink); border-radius: 12px; overflow: hidden; color: #D6E0E3; }
+  .gitem video { width: 100%; display: block; max-height: 340px; background: #000; }
+  .gitem .gmeta { padding: 10px 12px 8px; font-size: .85rem; line-height: 1.35; }
+  .gitem .gbtns { display: flex; gap: 8px; padding: 0 12px 12px; }
+  .gitem button { flex: 1; font: inherit; font-weight: 600; padding: 10px; border-radius: 8px; border: 0; cursor: pointer; background: #fff; color: var(--ink); }
+  .gitem button.del { background: #2C434A; color: #fff; }
 </style>
 </head>
 <body>
@@ -211,6 +219,13 @@
       <div class="actions" id="actions"></div>
     </aside>
   </div>
+
+  <section class="gallery" id="gallery">
+    <h2>Son videolarım</h2>
+    <p class="hint" id="galHint">Ürettiğin videolar burada saklanır.</p>
+    <div class="galgrid" id="galGrid"></div>
+    <button id="galClear" type="button" class="linkbtn" hidden>Tüm videoları sil</button>
+  </section>
 </div>
 
 <script>
@@ -379,26 +394,70 @@ function getKey() {
 }
 
 // Bir fal.ai işini gönderir, bitene kadar bekler, sonuç JSON'unu döndürür.
-async function falRun(model, input, label) {
+// Devam eden video işleri kaydedilir: ekran kapanıp sayfa yeniden açılsa da iş kaldığı yerden sürer.
+const PEND = 'falPending';
+const getPend = () => { try { return JSON.parse(localStorage.getItem(PEND) || '[]'); } catch (e) { return []; } };
+const setPend = (a) => { try { localStorage.setItem(PEND, JSON.stringify(a)); } catch (e) {} };
+const addPend = (p) => setPend(getPend().filter((x) => x.id !== p.id).concat(p));
+const delPend = (id) => { if (id) setPend(getPend().filter((x) => x.id !== id)); };
+const activeJobs = new Set();
+
+// Bir fal.ai işini bitene kadar bekler. Ağ kesilirse (ekran kilitlenince olur) vazgeçmez, tekrar dener.
+async function pollJob(statusUrl, responseUrl, label, id) {
+  const headers = { Authorization: `Key ${getKey()}`, 'Content-Type': 'application/json' };
+  const t0 = Date.now();
+  const fail = (m) => { delPend(id); activeJobs.delete(id); return Object.assign(new Error(m), { final: true }); };
+  for (;;) {
+    await sleep();
+    let st = null;
+    try {
+      const s = await fetch(statusUrl, { headers });
+      st = await s.json().catch(() => ({}));
+      if (!s.ok) throw fail(falError(st, s.status));
+    } catch (e) { if (e.final) throw e; st = null; }
+    if (st && st.status === 'COMPLETED') {
+      let o = null;
+      for (let k = 0; k < 6 && !o; k++) { try { o = await fetch(responseUrl, { headers }); } catch (e) { await sleep(); } }
+      if (!o) continue;
+      const out = await o.json().catch(() => ({}));
+      if (!o.ok) { const fe = falError(out, o.status); throw fail(/video|örnek|yüz/i.test(fe) ? fe : fe + ' (Fotoğraf uygun olmayabilir, başka bir fotoğrafla dene.)'); }
+      delPend(id); activeJobs.delete(id);
+      return out;
+    }
+    if (label) {
+      const sec = Math.round((Date.now() - t0) / 1000);
+      stageMsg(label, `${sec} sn geçti. Ekran kapanırsa sorun değil, video hazır olunca "Son videolarım"a eklenir.`, true);
+      if (sec > 900) { activeJobs.delete(id); throw new Error('Çok uzun sürdü. Birkaç dakika sonra sayfayı yenile, video hazırsa "Son videolarım"a eklenir.'); }
+    }
+  }
+}
+
+async function falRun(model, input, label, opts = {}) {
   const headers = { Authorization: `Key ${getKey()}`, 'Content-Type': 'application/json' };
   const r = await fetch(`${FAL}/${model}`, { method: 'POST', headers, body: JSON.stringify(input) });
   const d = await r.json().catch(() => ({}));
   if (!r.ok || !d.request_id) throw new Error(falError(d, r.status));
-  const t0 = Date.now();
-  for (;;) {
-    await sleep();
-    const s = await fetch(d.status_url, { headers });
-    const st = await s.json().catch(() => ({}));
-    if (!s.ok) throw new Error(falError(st, s.status));
-    if (st.status === 'COMPLETED') {
-      const o = await fetch(d.response_url, { headers });
-      const out = await o.json().catch(() => ({}));
-      if (!o.ok) { const fe = falError(out, o.status); throw new Error(/video|örnek|yüz/i.test(fe) ? fe : fe + ' (Fotoğraf uygun olmayabilir, başka bir fotoğrafla dene.)'); }
-      return out;
-    }
-    const sec = Math.round((Date.now() - t0) / 1000);
-    stageMsg(label, `${sec} sn geçti. Sayfayı kapatma.`, true);
-    if (sec > 600) throw new Error('Çok uzun sürdü, tekrar dene.');
+  const id = opts.video ? d.request_id : null;
+  if (id) { addPend({ id, statusUrl: d.status_url, responseUrl: d.response_url, label: opts.video, created: Date.now() }); activeJobs.add(id); }
+  return pollJob(d.status_url, d.response_url, label, id);
+}
+
+// Sayfa yeniden açılınca ya da ekran geri gelince bekleyen videoları sürdür.
+async function resumePending() {
+  const list = getPend().filter((p) => Date.now() - p.created < 2 * 3600 * 1000);
+  setPend(list);
+  for (const p of list) {
+    if (activeJobs.has(p.id)) continue;
+    activeJobs.add(p.id);
+    (async () => {
+      try {
+        stageMsg('Önceki video hazırlanıyor', 'Sayfa yeniden açıldığı için kaldığı yerden devam ediyor.', true);
+        const out = await pollJob(p.statusUrl, p.responseUrl, null, p.id);
+        const v = out.video && out.video.url;
+        if (v) { await galAdd(v, p.label); showVideo(v); }
+      } catch (e) { if (e.final) $('#err').textContent = e.message; stageMsg('Önceki video alınamadı', e.message || ''); }
+      finally { activeJobs.delete(p.id); }
+    })();
   }
 }
 
@@ -491,10 +550,10 @@ async function makeVideo(url) {
   else if (m.audio) body = { prompt, start_image_url: url, duration: String(dur), generate_audio: true, negative_prompt: neg };
   else body = { prompt, image_url: url, duration: String(dur), negative_prompt: neg };
   let out;
-  try { out = await falRun(m.model, body, 'Video hazırlanıyor'); }
+  try { out = await falRun(m.model, body, 'Video hazırlanıyor', { video: tplLabel() }); }
   catch (e) {
     // Bazı modeller süreyi sayı olarak ister; bir kez sayıyla dene.
-    if (/duration/i.test(e.message)) { body.duration = dur; out = await falRun(m.model, body, 'Video hazırlanıyor'); } else throw e;
+    if (/duration/i.test(e.message)) { body.duration = dur; out = await falRun(m.model, body, 'Video hazırlanıyor', { video: tplLabel() }); } else throw e;
   }
   const v = out.video && out.video.url;
   if (!v) throw new Error('Video üretilemedi.');
@@ -528,6 +587,94 @@ async function runFrame() {
 }
 
 
+
+// ---- Kalıcı galeri: videolar bu cihazda (IndexedDB) saklanır ----
+function tplLabel() {
+  const m = document.querySelector('input[name=m]:checked');
+  if (m && m.value === 'swap') return 'Birebir aynı video';
+  const t = TEMPLATES.find((x) => x.id === tplId);
+  return t ? t.name : 'Video';
+}
+function idb() {
+  return new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error('IndexedDB yok'));
+    const r = indexedDB.open('fotovideo', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('videos', { keyPath: 'id' });
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbTx(mode, fn) {
+  const db = await idb();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('videos', mode); let req;
+    try { req = fn(tx.objectStore('videos')); } catch (e) { rej(e); return; }
+    tx.oncomplete = () => res(req && req.result);
+    tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error);
+  });
+}
+const galPut = (it) => idbTx('readwrite', (st) => st.put(it));
+const galDel = (id) => idbTx('readwrite', (st) => st.delete(id));
+async function galList() {
+  let items = [];
+  try { items = (await idbTx('readonly', (st) => st.getAll())) || []; } catch (e) {}
+  try { items = items.concat(JSON.parse(localStorage.getItem('galUrls') || '[]').map((x, i) => ({ id: 'u' + i + x.created, ...x }))); } catch (e) {}
+  return items.sort((a, b) => b.created - a.created);
+}
+const blobCache = {};
+function getBlob(url) { return blobCache[url] || (blobCache[url] = fetch(url).then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); })); }
+async function galAdd(url, label) {
+  try {
+    if ((await galList()).some((x) => x.url === url)) { renderGallery(); return; }
+    let blob = null; try { blob = await getBlob(url); } catch (e) {}
+    try {
+      await galPut({ id: Date.now() + '-' + Math.random().toString(36).slice(2, 6), created: Date.now(), label, url, blob });
+      const items = (await galList()).filter((x) => !String(x.id).startsWith('u'));
+      for (const x of items.slice(20)) await galDel(x.id);
+    } catch (e) {
+      const l = JSON.parse(localStorage.getItem('galUrls') || '[]'); l.unshift({ url, label, created: Date.now() });
+      localStorage.setItem('galUrls', JSON.stringify(l.slice(0, 20)));
+    }
+  } catch (e) {}
+  renderGallery();
+}
+async function shareItem(it) {
+  if (!it.blob) { window.open(it.url, '_blank'); return; }
+  const file = new File([it.blob], 'halay-video.mp4', { type: 'video/mp4' });
+  try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Halay videosu' }); return; } }
+  catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(it.blob); a.download = 'halay-video.mp4'; document.body.appendChild(a); a.click(); a.remove();
+}
+let galUrls = [];
+async function renderGallery() {
+  const items = await galList();
+  galUrls.forEach((u) => URL.revokeObjectURL(u)); galUrls = [];
+  const grid = $('#galGrid'); grid.innerHTML = '';
+  $('#galHint').textContent = items.length ? 'Ürettiğin videolar bu cihazda saklanır. Ekran kapansa ya da sayfa yenilense de kaybolmaz.' : 'Ürettiğin videolar burada saklanır. Henüz video yok.';
+  $('#galClear').hidden = !items.length;
+  for (const it of items) {
+    let src = it.url;
+    if (it.blob) { src = URL.createObjectURL(it.blob); galUrls.push(src); }
+    const d = document.createElement('div'); d.className = 'gitem';
+    const when = new Date(it.created).toLocaleString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    d.innerHTML = `<video src="${src}" controls playsinline preload="metadata"></video><div class="gmeta"><b>${it.label || 'Video'}</b><br>${when}</div><div class="gbtns"><button class="sv">Kaydet</button><button class="del">Sil</button></div>`;
+    d.querySelector('.sv').addEventListener('click', () => shareItem(it));
+    d.querySelector('.del').addEventListener('click', async () => {
+      if (!confirm('Bu video silinsin mi?')) return;
+      try { await galDel(it.id); } catch (e) {}
+      try { const l = JSON.parse(localStorage.getItem('galUrls') || '[]').filter((x) => x.url !== it.url); localStorage.setItem('galUrls', JSON.stringify(l)); } catch (e) {}
+      renderGallery();
+    });
+    grid.appendChild(d);
+  }
+}
+$('#galClear').addEventListener('click', async () => {
+  if (!confirm('Tüm kayıtlı videolar silinsin mi?')) return;
+  for (const it of await galList()) { try { await galDel(it.id); } catch (e) {} }
+  try { localStorage.removeItem('galUrls'); } catch (e) {}
+  renderGallery();
+});
+
 async function runSwap() {
   $('#err').textContent = ''; setActions(''); $('#go').disabled = true;
   const imgs = photos.filter(Boolean);
@@ -541,9 +688,9 @@ async function runSwap() {
     const prompt = 'Replace the three dancing people in the video: the person on the left who holds the white handkerchief with @Element1, the person in the middle with @Element2, and the person on the right with @Element3. Keep exactly the same movements, dance steps, timing, background and camera movement as in the original video. The new people must keep their own faces, hair and skin tone exactly as in their element images.';
     const mk = (withRef) => ({ prompt, video_url: ref, keep_audio: true, elements: imgUrls.map((u) => withRef ? { frontal_image_url: u, reference_image_urls: [u] } : { frontal_image_url: u }) });
     let out;
-    try { out = await falRun(VIDEO.swap.model, mk(true), 'Video hazırlanıyor'); }
+    try { out = await falRun(VIDEO.swap.model, mk(true), 'Video hazırlanıyor', { video: tplLabel() }); }
     catch (e) {
-      if (/reference|element/i.test(e.message)) out = await falRun(VIDEO.swap.model, mk(false), 'Video hazırlanıyor'); else throw e;
+      if (/reference|element/i.test(e.message)) out = await falRun(VIDEO.swap.model, mk(false), 'Video hazırlanıyor', { video: tplLabel() }); else throw e;
     }
     const v = out.video && out.video.url;
     if (!v) throw new Error('Video üretilemedi.');
@@ -564,13 +711,14 @@ function showVideo(url) {
   setActions(`<button class="main" id="saveBtn" disabled>Kaydetmeye hazırlanıyor...</button><a href="${url}" target="_blank" rel="noopener">Videoyu aç</a><button id="again2">Yeniden dene</button>`);
   $('#again2').addEventListener('click', () => (VIDEO[document.querySelector('input[name=m]:checked').value].noFrame ? runSwap() : runFrame()));
   prepareSave(url);
+  galAdd(url, tplLabel());
   focusStage();
 }
 
 // Videoyu önceden indirip hazır tutar: iPhone'da paylaşma menüsü ancak dokunma anında açılabilir.
 function prepareSave(url) {
   const btn = $('#saveBtn');
-  fetch(url).then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); }).then((blob) => {
+  getBlob(url).then((blob) => {
     const file = new File([blob], 'halay-video.mp4', { type: 'video/mp4' });
     btn.disabled = false; btn.textContent = 'Videoyu kaydet';
     btn.addEventListener('click', async () => {
@@ -613,6 +761,10 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) naviga
 renderSlots();
 updateEstimate();
 syncGo();
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+renderGallery();
+resumePending();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) resumePending(); });
 </script>
 </body>
 </html>
