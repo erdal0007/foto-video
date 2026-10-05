@@ -250,11 +250,21 @@ let tplId = TEMPLATES[0].id, frameUrl = null;
 const sleep = () => new Promise((r) => setTimeout(r, window.POLL_MS || 4000));
 
 const keyInput = $('#key');
-keyInput.value = localStorage.getItem('falKey') || '';
-$('#saveKey').addEventListener('click', () => {
-  localStorage.setItem('falKey', keyInput.value.trim());
-  $('#keyOk').hidden = false;
-  setTimeout(() => ($('#keyOk').hidden = true), 2500);
+keyInput.value = (localStorage.getItem('falKey') || '').replace(/["'\s]/g, '');
+$('#saveKey').addEventListener('click', async () => {
+  const k = cleanKey(keyInput.value);
+  const ok = $('#keyOk');
+  ok.hidden = false; ok.style.color = '';
+  if (!k) { ok.textContent = 'Anahtar kutusu boş.'; ok.style.color = '#9E2D18'; return; }
+  keyInput.value = k; localStorage.setItem('falKey', k);
+  ok.textContent = 'Anahtar sınanıyor...';
+  try {
+    const base = window.FAL_REST || 'https://rest.alpha.fal.ai';
+    const r = await fetch(`${base}/storage/upload/initiate?storage_type=fal-cdn-v3`, { method: 'POST', headers: { Authorization: `Key ${k}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ content_type: 'image/jpeg', file_name: 'sina.jpg' }) });
+    if (r.ok) { ok.textContent = 'Anahtar kaydedildi ve geçerli.'; ok.style.color = '#1F7A3E'; }
+    else if (r.status === 401 || r.status === 403) { ok.textContent = 'Anahtar geçersiz. fal.ai > Settings > API Keys sayfasında yeni bir anahtar oluşturup tamamını yapıştır.'; ok.style.color = '#9E2D18'; }
+    else { ok.textContent = 'Anahtar kaydedildi (sınanamadı, kod ' + r.status + ').'; }
+  } catch (e) { ok.textContent = 'Anahtar kaydedildi (sınanamadı, bağlantı hatası).'; }
 });
 
 $('#tpls').innerHTML = TEMPLATES.map((t, i) => `
@@ -317,8 +327,9 @@ function falError(d, status) {
   if (status === 422) return 'Girdi geçersiz (422). Fotoğraflarda net bir yüz olmayabilir ya da video koşulları uymuyor.';
   return `Video servisi hata verdi (${status}).`;
 }
+function cleanKey(v) { return (v || '').replace(/^\s*(FAL_KEY\s*=|Key\s+)/i, '').replace(/["'\s]/g, ''); }
 function getKey() {
-  const key = (localStorage.getItem('falKey') || keyInput.value).trim();
+  const key = cleanKey(keyInput.value) || cleanKey(localStorage.getItem('falKey'));
   if (!key) throw new Error('Önce yukarıya fal.ai anahtarını yapıştırıp Kaydet\'e bas.');
   return key;
 }

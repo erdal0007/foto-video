@@ -1,4 +1,4 @@
-const CACHE = 'foto-video-v8';
+const CACHE = 'foto-video-v9';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './referans-halay-720.mp4'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener('activate', (e) => {
